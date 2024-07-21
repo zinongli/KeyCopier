@@ -10,21 +10,22 @@
 #include <notification/notification.h>
 #include <notification/notification_messages.h>
 #include "key_maker_icons.h"
+#include "key_formats.h"
 
 #define TAG "KeyMaker"
 
 #define INCHES_PER_PIXEL 0.00978
 
-#define START_INCH 0.247
-#define END_INCH 0.997
-#define STEP_SIZE_INCH 0.15
+#define FIRST_PIN_INCH 0.247
+#define LAST_PIN_INCH 0.997
+#define PIN_INCREMENT_INCH 0.15
 
 #define UNCUT_DEPTH_INCH 0.329
 #define DEEPEST_DEPTH_INCH 0.191
 #define DEPTH_STEP_INCH 0.023
 #define MAX_DEPTH_IND ((UNCUT_DEPTH_INCH - DEEPEST_DEPTH_INCH) / DEPTH_STEP_INCH)
 #define PIN_WIDTH_INCH 0.084
-#define MAX_PIN 6
+#define PIN_NUM 6
 
 // Change this to BACKLIGHT_AUTO if you don't want the backlight to be continuously on.
 #define BACKLIGHT_ON 1
@@ -66,18 +67,30 @@ typedef struct {
     FuriTimer* timer; // Timer for redrawing the screen
 } KeyMakerApp;
 
+
 typedef struct {
-    uint32_t total_pin_index; // The index for total number of pins
-    FuriString* key_name_name; // The name setting
+    uint32_t format_index; // The index for total number of pins
+    FuriString* key_name_str; // The name setting
     uint8_t pin_slc; // The pin that is being adjusted
     uint8_t total_pin; // The total number of pins we are adjusting
-    uint8_t depth[]; // The cutting depth
+    uint8_t* depth; // The cutting depth
+    KeyFormat format;
 } KeyMakerGameModel;
 
+
+
 void initialize_depths(KeyMakerGameModel* model) {
-    for (uint8_t i = 0; i <= model->total_pin; i++) {
+    if(model->depth != NULL) {
+        free(model->depth);
+    }
+    model->depth = (uint8_t*)malloc((model->total_pin + 1) * sizeof(uint8_t));
+    for(uint8_t i = 0; i <= model->total_pin; i++) {
         model->depth[i] = 0;
     }
+}
+
+void initialize_format(KeyMakerGameModel* model) {
+    memcpy(&model->format, &all_formats[0], sizeof(KeyFormat));
 }
 
 /**
@@ -142,16 +155,20 @@ static void key_maker_submenu_callback(void* context, uint32_t index) {
 /**
  * Our 1st sample setting is a team color.  We have 3 options: red, green, and blue.
 */
-static const char* total_pin_config_label = "Num of Pins";
-static uint8_t total_pin_values[] = {5, 6};
-static char* total_pin_names[] = {"5 (WIP)", "6"};
+static const char* total_pin_config_label = "Key Format";
+static char* format_names[] = {"Kwikset", "Schlage"};
 static void key_maker_total_pin_change(VariableItem* item) {
     KeyMakerApp* app = variable_item_get_context(item);
-    uint8_t index = variable_item_get_current_value_index(item);
-    variable_item_set_current_value_text(item, total_pin_names[index]);
+    uint8_t format_index = variable_item_get_current_value_index(item);
+    variable_item_set_current_value_text(item, format_names[format_index]);
     KeyMakerGameModel* model = view_get_model(app->view_game);
-    model->total_pin_index = index;
-    model->total_pin = total_pin_values[index];
+    model->format_index = format_index;
+    model->format = all_formats[format_index];
+    model->total_pin = model->format.pin_num;
+    if(model->depth != NULL) {
+        free(model->depth);
+    }
+    model->depth = (uint8_t*)malloc((model->total_pin + 1) * sizeof(uint8_t));
 }
 
 /**
@@ -169,9 +186,9 @@ static void key_maker_key_name_text_updated(void* context) {
         app->view_game,
         KeyMakerGameModel * model,
         {
-            furi_string_set(model->key_name_name, app->temp_buffer);
+            furi_string_set(model->key_name_str, app->temp_buffer);
             variable_item_set_current_value_text(
-                app->key_name_item, furi_string_get_cstr(model->key_name_name));
+                app->key_name_item, furi_string_get_cstr(model->key_name_str));
         },
         redraw);
     view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewConfigure);
@@ -201,7 +218,7 @@ static void key_maker_setting_item_clicked(void* context, uint32_t index) {
             {
                 strncpy(
                     app->temp_buffer,
-                    furi_string_get_cstr(model->key_name_name),
+                    furi_string_get_cstr(model->key_name_str),
                     app->temp_buffer_size);
             },
             redraw);
@@ -233,33 +250,27 @@ static inline int min(int a, int b) {
  * @param      canvas  The canvas to draw on.
  * @param      model   The model - MyModel object.
 */
-static double start_inch = START_INCH;
-static double end_inch = END_INCH;
-static double step_size_inch = STEP_SIZE_INCH;
-static double inches_per_pixel = INCHES_PER_PIXEL;
-static double uncut_depth_inch = UNCUT_DEPTH_INCH;
-static double depth_step_inch = DEPTH_STEP_INCH;
+static double inches_per_pixel = (double)INCHES_PER_PIXEL;
 static int pin_half_width_pixel;
 static int pin_step_pixel;
 static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
     KeyMakerGameModel* my_model = (KeyMakerGameModel*)model;
+    KeyFormat my_format = my_model->format;
     static bool initialized = false;
     if (!initialized) {
-        pin_half_width_pixel = (int)round(PIN_WIDTH_INCH / INCHES_PER_PIXEL / 4);
-        pin_step_pixel = (int)round(step_size_inch / inches_per_pixel);
+        pin_half_width_pixel = (int)round(my_format.pin_width_inch / inches_per_pixel / 2);
+        pin_step_pixel = (int)round(my_format.pin_increment_inch / inches_per_pixel);
         initialized = true;
     }
-    int pin_step_pixel = (int)round(step_size_inch / inches_per_pixel);
+    int pin_step_pixel = (int)round(my_format.pin_increment_inch / inches_per_pixel);
     int post_extra_x_pixel = pin_step_pixel;
     for (int current_pin = 1; current_pin <= my_model->total_pin; current_pin += 1) {
-        double current_value = start_inch + (current_pin - 1) * step_size_inch;
-        int pin_center_pixel = (int)round(current_value / inches_per_pixel);
-        //int next_pin_center_pixel = (int)round((start_inch + (current_pin) * step_size_inch) / inches_per_pixel);
-        //int last_pin_center_pixel = (int)round((start_inch + (current_pin-2) * step_size_inch) / inches_per_pixel);
+        double current_center_pixel = my_format.first_pin_inch + (current_pin - 1) * my_format.pin_increment_inch;
+        int pin_center_pixel = (int)round(current_center_pixel / inches_per_pixel);
 
-        int top_contour_pixel = (int)round(63 - uncut_depth_inch / inches_per_pixel);
+        int top_contour_pixel = (int)round(63 - my_format.uncut_depth_inch / inches_per_pixel);
         canvas_draw_line(canvas, pin_center_pixel, 20, pin_center_pixel, 50);
-        int depth_pixel_i = (int)round(my_model->depth[current_pin - 1] * depth_step_inch / inches_per_pixel);
+        int depth_pixel_i = (int)round(my_model->depth[current_pin - 1] * my_format.depth_step_inch / inches_per_pixel);
         canvas_draw_line(canvas, pin_center_pixel - pin_half_width_pixel, top_contour_pixel + depth_pixel_i, pin_center_pixel + pin_half_width_pixel, top_contour_pixel + depth_pixel_i);
         int last_depth = my_model->depth[current_pin - 2];
         int next_depth = my_model->depth[current_pin];        
@@ -268,18 +279,17 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
             last_depth = 0;
         } 
         if(current_pin == my_model->total_pin) {
-            next_depth = MAX_DEPTH_IND;
+            next_depth = my_format.max_depth_ind;
             double numerator = (double)my_model->depth[current_pin - 1];
             double denominator = (double)(my_model->depth[current_pin - 1] + next_depth);
-            double fraction = numerator / denominator;
-            double product = fraction * pin_step_pixel;   
+            double product = numerator / denominator * pin_step_pixel;   
             int extra_x_pixel = (int)round(product); 
             canvas_draw_line(
                 canvas,
                 pin_center_pixel + extra_x_pixel,
                 top_contour_pixel + depth_pixel_i - (extra_x_pixel - pin_half_width_pixel),
                 128,
-                top_contour_pixel + (128 - (pin_center_pixel + pin_half_width_pixel))
+                top_contour_pixel + (128 - (pin_center_pixel + extra_x_pixel))
                 );
         }
         if ((last_depth + my_model->depth[current_pin - 1]) > 4) { //yes intersection  
@@ -303,8 +313,7 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
         if ((my_model->depth[current_pin - 1] + next_depth) > 4) { //yes intersection
             double numerator = (double)my_model->depth[current_pin - 1];
             double denominator = (double)(my_model->depth[current_pin - 1] + next_depth);
-            double fraction = numerator / denominator;
-            double product = fraction * pin_step_pixel;   
+            double product = numerator / denominator * pin_step_pixel;   
             post_extra_x_pixel = (int)round(product);         
             canvas_draw_line(
                 canvas,
@@ -324,12 +333,12 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
         }
     }
 
-    int level_contour_pixel = (int)round((end_inch + step_size_inch) / inches_per_pixel - 4);
+    int level_contour_pixel = (int)round((my_format.last_pin_inch + my_format.pin_increment_inch) / inches_per_pixel - 4);
     canvas_draw_line(canvas, 0, 63, level_contour_pixel, 63);
-    int step_pixel = (int)round(step_size_inch / inches_per_pixel);
+    int step_pixel = (int)round(my_format.pin_increment_inch / inches_per_pixel);
     canvas_draw_line(canvas, level_contour_pixel, 63, level_contour_pixel+step_pixel, 63-step_pixel);
 
-    int slc_pin_pixel = (int)round((start_inch + (my_model->pin_slc - 1) * step_size_inch)/ inches_per_pixel);
+    int slc_pin_pixel = (int)round((my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch)/ inches_per_pixel);
     canvas_draw_str(canvas, slc_pin_pixel-2, 18, "*");
 
     FuriString* xstr = furi_string_alloc();
@@ -349,7 +358,7 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
     furi_string_printf(xstr, "depth: %s", depth_str);
     canvas_draw_str(canvas, 0, 10, furi_string_get_cstr(xstr));
     
-    //furi_string_printf(xstr, "Num of Pins: %s", total_pin_names[my_model->total_pin_index]);
+    //furi_string_printf(xstr, "Num of Pins: %s", format_names[my_model->format_index]);
     //canvas_draw_str(canvas, 44, 24, furi_string_get_cstr(xstr));
     furi_string_free(xstr);
 }
@@ -448,7 +457,7 @@ static bool key_maker_view_game_input_callback(InputEvent* event, void* context)
                     app->view_game,
                     KeyMakerGameModel * model,
                     {
-                        if(model->pin_slc < model->total_pin) {
+                        if(model->pin_slc < model->format.pin_num) {
                             model->pin_slc++;
                         }
                     },
@@ -462,8 +471,8 @@ static bool key_maker_view_game_input_callback(InputEvent* event, void* context)
                     app->view_game,
                     KeyMakerGameModel * model,
                     {
-                        if(model->depth[model->pin_slc-1] > 0) {
-                            model->depth[model->pin_slc-1]--;
+                        if(model->depth[model->pin_slc - 1] > model->format.start_depth_ind) {
+                            model->depth[model->pin_slc - 1]--;
                         }
                     },
                     redraw);
@@ -476,8 +485,8 @@ static bool key_maker_view_game_input_callback(InputEvent* event, void* context)
                     app->view_game,
                     KeyMakerGameModel * model,
                     {
-                        if(model->depth[model->pin_slc-1] <= (int)round(MAX_DEPTH_IND)) {
-                            model->depth[model->pin_slc-1]++;
+                        if(model->depth[model->pin_slc - 1] <= model->format.max_depth_ind) {
+                            model->depth[model->pin_slc - 1]++;
                         }
                     },
                     redraw);
@@ -538,19 +547,19 @@ static KeyMakerApp* key_maker_app_alloc() {
     VariableItem* item = variable_item_list_add(
         app->variable_item_list_config,
         total_pin_config_label,
-        COUNT_OF(total_pin_values),
+        COUNT_OF(format_names),
         key_maker_total_pin_change,
         app);
-    uint8_t total_pin_index = 1;
-    variable_item_set_current_value_index(item, total_pin_index);
-    variable_item_set_current_value_text(item, total_pin_names[total_pin_index]);
+    uint8_t format_index = 1;
+    variable_item_set_current_value_index(item, format_index);
+    variable_item_set_current_value_text(item, format_names[format_index]);
 
-    FuriString* key_name_name = furi_string_alloc();
-    furi_string_set_str(key_name_name, key_name_default_value);
+    FuriString* key_name_str = furi_string_alloc();
+    furi_string_set_str(key_name_str, key_name_default_value);
     app->key_name_item = variable_item_list_add(
         app->variable_item_list_config, key_name_config_label, 1, NULL, NULL);
     variable_item_set_current_value_text(
-        app->key_name_item, furi_string_get_cstr(key_name_name));
+        app->key_name_item, furi_string_get_cstr(key_name_str));
     variable_item_list_set_enter_callback(
         app->variable_item_list_config, key_maker_setting_item_clicked, app);
 
@@ -572,12 +581,12 @@ static KeyMakerApp* key_maker_app_alloc() {
     view_set_custom_callback(app->view_game, key_maker_view_game_custom_event_callback);
     view_allocate_model(app->view_game, ViewModelTypeLockFree, sizeof(KeyMakerGameModel));
     KeyMakerGameModel* model = view_get_model(app->view_game);
-    model->total_pin_index = total_pin_index;
-    model->key_name_name = key_name_name;
-    model->pin_slc = 1;
-    model->total_pin = total_pin_values[model->total_pin_index];
     initialize_depths(model);
-
+    initialize_format(model);
+    model->format_index = format_index;
+    model->key_name_str = key_name_str;
+    model->pin_slc = 1;
+    model->total_pin = model->format.pin_num;
 
     view_dispatcher_add_view(app->view_dispatcher, KeyMakerViewGame, app->view_game);
 
@@ -620,6 +629,15 @@ static void key_maker_app_free(KeyMakerApp* app) {
     view_dispatcher_remove_view(app->view_dispatcher, KeyMakerViewAbout);
     widget_free(app->widget_about);
     view_dispatcher_remove_view(app->view_dispatcher, KeyMakerViewGame);
+    with_view_model(
+        app->view_game,
+        KeyMakerGameModel * model,
+        {
+            if(model->depth != NULL) {
+                free(model->depth);
+            }
+        },
+        false);
     view_free(app->view_game);
     view_dispatcher_remove_view(app->view_dispatcher, KeyMakerViewConfigure);
     variable_item_list_free(app->variable_item_list_config);
