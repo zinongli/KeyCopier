@@ -280,17 +280,6 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
         } 
         if(current_pin == my_model->total_pin) {
             next_depth = my_format.max_depth_ind;
-            double numerator = (double)my_model->depth[current_pin - 1];
-            double denominator = (double)(my_model->depth[current_pin - 1] + next_depth);
-            double product = numerator / denominator * pin_step_pixel;   
-            int extra_x_pixel = (int)round(product); 
-            canvas_draw_line(
-                canvas,
-                pin_center_pixel + extra_x_pixel,
-                top_contour_pixel + depth_pixel_i - (extra_x_pixel - pin_half_width_pixel),
-                128,
-                top_contour_pixel + (128 - (pin_center_pixel + extra_x_pixel))
-                );
         }
         if ((last_depth + my_model->depth[current_pin - 1]) > 4) { //yes intersection  
             int pre_extra_x_pixel = pin_step_pixel - post_extra_x_pixel;
@@ -472,7 +461,19 @@ static bool key_maker_view_game_input_callback(InputEvent* event, void* context)
                     KeyMakerGameModel * model,
                     {
                         if(model->depth[model->pin_slc - 1] > model->format.start_depth_ind) {
-                            model->depth[model->pin_slc - 1]--;
+                            if (model->pin_slc == 1) { //first pin only limited by the next one
+                                if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs)
+                                model->depth[model->pin_slc - 1]--;
+                            } else if (model->pin_slc == model->format.pin_num) { //last pin only limited by the previous one
+                                if (model->depth[model->pin_slc - 2] - model->depth[model->pin_slc - 1] < model->format.macs) {
+                                model->depth[model->pin_slc - 1]--;
+                                }
+                            } else{
+                                if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs &&
+                                model->depth[model->pin_slc - 2] - model->depth[model->pin_slc - 1] < model->format.macs) {
+                                model->depth[model->pin_slc - 1]--;
+                                }
+                            }
                         }
                     },
                     redraw);
@@ -485,8 +486,20 @@ static bool key_maker_view_game_input_callback(InputEvent* event, void* context)
                     app->view_game,
                     KeyMakerGameModel * model,
                     {
-                        if(model->depth[model->pin_slc - 1] <= model->format.max_depth_ind) {
-                            model->depth[model->pin_slc - 1]++;
+                        if(model->depth[model->pin_slc - 1] < model->format.max_depth_ind) {
+                            if (model->pin_slc == 1) { //first pin only limited by the next one
+                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] < model->format.macs)
+                                model->depth[model->pin_slc - 1]++;
+                            } else if (model->pin_slc == model->format.pin_num) { //last pin only limited by the previous one
+                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc - 2] < model->format.macs) {
+                                model->depth[model->pin_slc - 1]++;
+                                }
+                            } else{
+                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] < model->format.macs &&
+                                model->depth[model->pin_slc - 1] - model->depth[model->pin_slc - 2] < model->format.macs) {
+                                model->depth[model->pin_slc - 1]++;
+                                }
+                            }
                         }
                     },
                     redraw);
@@ -526,9 +539,9 @@ static KeyMakerApp* key_maker_app_alloc() {
 
     app->submenu = submenu_alloc();
     submenu_add_item(
-        app->submenu, "Config", KeyMakerSubmenuIndexConfigure, key_maker_submenu_callback, app);
+        app->submenu, "Match", KeyMakerSubmenuIndexGame, key_maker_submenu_callback, app);
     submenu_add_item(
-        app->submenu, "Play", KeyMakerSubmenuIndexGame, key_maker_submenu_callback, app);
+        app->submenu, "Config", KeyMakerSubmenuIndexConfigure, key_maker_submenu_callback, app);
     submenu_add_item(
         app->submenu, "About", KeyMakerSubmenuIndexAbout, key_maker_submenu_callback, app);
     view_set_previous_callback(submenu_get_view(app->submenu), key_maker_navigation_exit_callback);
@@ -597,7 +610,7 @@ static KeyMakerApp* key_maker_app_alloc() {
         0,
         128,
         64,
-        "Key Maker App 0.1");
+        "Key Maker App 0.1\nGithub: @zinongli\nbased on Derak Jamison's \nSkeleton App\nProject channel: \nhttps://discord.gg/BwNar4pAQ9");
     view_set_previous_callback(
         widget_get_view(app->widget_about), key_maker_navigation_submenu_callback);
     view_dispatcher_add_view(
