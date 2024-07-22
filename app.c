@@ -77,21 +77,20 @@ typedef struct {
     KeyFormat format;
 } KeyMakerGameModel;
 
-
-
-void initialize_depths(KeyMakerGameModel* model) {
-    if(model->depth != NULL) {
-        free(model->depth);
-    }
-    model->depth = (uint8_t*)malloc((model->total_pin + 1) * sizeof(uint8_t));
-    for(uint8_t i = 0; i <= model->total_pin; i++) {
-        model->depth[i] = model->format.min_depth_ind;
-    }
-}
-
 void initialize_format(KeyMakerGameModel* model) {
     model->format_index = 0;
     memcpy(&model->format, &all_formats[model->format_index], sizeof(KeyFormat));
+}
+
+void initialize_model(KeyMakerGameModel* model) {
+    if(model->depth != NULL) {
+        free(model->depth);
+    }
+    initialize_format(model);
+    model->depth = (uint8_t*)malloc((model->format.pin_num + 1) * sizeof(uint8_t));
+    for(uint8_t i = 0; i <= model->format.pin_num; i++) {
+        model->depth[i] = model->format.min_depth_ind;
+    }
 }
 
 /**
@@ -291,7 +290,7 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
         }
         if ((last_depth + current_depth) > my_format.clearance && current_depth != my_format.min_depth_ind) { //yes intersection  
             
-            if (current_pin != 1) {pre_extra_x_pixel = max(pin_step_pixel - post_extra_x_pixel,0);}
+            if (current_pin != 1) {pre_extra_x_pixel = max(pin_step_pixel - post_extra_x_pixel,pin_half_width_pixel);}
             canvas_draw_line(
                 canvas,
                 pin_center_pixel - pre_extra_x_pixel,
@@ -312,7 +311,7 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
             double numerator = (double)current_depth;
             double denominator = (double)(current_depth + next_depth);
             double product = (numerator / denominator) * pin_step_pixel;   
-            post_extra_x_pixel = (int)round(product);         
+            post_extra_x_pixel = (int)max(round(product),pin_half_width_pixel);         
             canvas_draw_line(
                 canvas,
                 pin_center_pixel + pin_half_width_pixel,
@@ -332,9 +331,9 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
     }
 
     int level_contour_pixel = (int)round((my_format.last_pin_inch + my_format.pin_increment_inch) / inches_per_pixel - 4);
-    canvas_draw_line(canvas, 0, 63, level_contour_pixel, 63);
+    canvas_draw_line(canvas, 0, 62, level_contour_pixel, 62);
     int step_pixel = (int)round(my_format.pin_increment_inch / inches_per_pixel);
-    canvas_draw_line(canvas, level_contour_pixel, 63, level_contour_pixel+step_pixel, 63-step_pixel);
+    canvas_draw_line(canvas, level_contour_pixel, 62, level_contour_pixel+step_pixel, 62-step_pixel);
 
     int slc_pin_pixel = (int)round((my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch)/ inches_per_pixel);
     canvas_draw_str(canvas, slc_pin_pixel-2, 18, "*");
@@ -601,8 +600,7 @@ static KeyMakerApp* key_maker_app_alloc() {
     view_allocate_model(app->view_game, ViewModelTypeLockFree, sizeof(KeyMakerGameModel));
     KeyMakerGameModel* model = view_get_model(app->view_game);
 
-    initialize_format(model);
-    initialize_depths(model);
+    initialize_model(model);
     model->key_name_str = key_name_str;
     model->pin_slc = 1;
     model->total_pin = model->format.pin_num;
@@ -619,7 +617,7 @@ static KeyMakerApp* key_maker_app_alloc() {
         0,
         128,
         64,
-        "Key Maker App 0.1\nGithub: @zinongli\nbased on Derak Jamison's \nSkeleton App\nProject channel: \nhttps://discord.gg/BwNar4pAQ9");
+        "Key Maker App 0.1\nGithub: https://github.com/zinongli/KeyCopier \nBased on Derak Jamison's \nSkeleton App\nProject channel: \nhttps://discord.gg/BwNar4pAQ9");
     view_set_previous_callback(
         widget_get_view(app->widget_about), key_maker_navigation_submenu_callback);
     view_dispatcher_add_view(
