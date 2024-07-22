@@ -14,10 +14,11 @@ typedef struct {
     double uncut_depth_inch;
     double deepest_depth_inch;
     double depth_step_inch;
-    int start_depth_ind;
+    int min_depth_ind;
     int max_depth_ind;
 
     int macs;
+    int clearance;
 } KeyFormat;
 
 extern const KeyFormat all_formats[];

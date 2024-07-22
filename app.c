@@ -85,12 +85,13 @@ void initialize_depths(KeyMakerGameModel* model) {
     }
     model->depth = (uint8_t*)malloc((model->total_pin + 1) * sizeof(uint8_t));
     for(uint8_t i = 0; i <= model->total_pin; i++) {
-        model->depth[i] = 0;
+        model->depth[i] = model->format.min_depth_ind;
     }
 }
 
 void initialize_format(KeyMakerGameModel* model) {
-    memcpy(&model->format, &all_formats[0], sizeof(KeyFormat));
+    model->format_index = 0;
+    memcpy(&model->format, &all_formats[model->format_index], sizeof(KeyFormat));
 }
 
 /**
@@ -244,6 +245,10 @@ static void key_maker_setting_item_clicked(void* context, uint32_t index) {
 static inline int min(int a, int b) {
     return (a < b) ? a : b;
 }
+
+static inline int max(int a, int b) {
+    return (a > b) ? a : b;
+}
 /**
  * @brief      Callback for drawing the game screen.
  * @details    This function is called when the screen needs to be redrawn, like when the model gets updated.
@@ -251,8 +256,8 @@ static inline int min(int a, int b) {
  * @param      model   The model - MyModel object.
 */
 static double inches_per_pixel = (double)INCHES_PER_PIXEL;
-static int pin_half_width_pixel;
-static int pin_step_pixel;
+int pin_half_width_pixel;
+int pin_step_pixel;
 static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
     KeyMakerGameModel* my_model = (KeyMakerGameModel*)model;
     KeyFormat my_format = my_model->format;
@@ -263,60 +268,64 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
         initialized = true;
     }
     int pin_step_pixel = (int)round(my_format.pin_increment_inch / inches_per_pixel);
-    int post_extra_x_pixel = pin_step_pixel;
+    int post_extra_x_pixel = 0;
+    int pre_extra_x_pixel = 0;
     for (int current_pin = 1; current_pin <= my_model->total_pin; current_pin += 1) {
         double current_center_pixel = my_format.first_pin_inch + (current_pin - 1) * my_format.pin_increment_inch;
         int pin_center_pixel = (int)round(current_center_pixel / inches_per_pixel);
 
         int top_contour_pixel = (int)round(63 - my_format.uncut_depth_inch / inches_per_pixel);
         canvas_draw_line(canvas, pin_center_pixel, 20, pin_center_pixel, 50);
-        int depth_pixel_i = (int)round(my_model->depth[current_pin - 1] * my_format.depth_step_inch / inches_per_pixel);
-        canvas_draw_line(canvas, pin_center_pixel - pin_half_width_pixel, top_contour_pixel + depth_pixel_i, pin_center_pixel + pin_half_width_pixel, top_contour_pixel + depth_pixel_i);
-        int last_depth = my_model->depth[current_pin - 2];
-        int next_depth = my_model->depth[current_pin];        
+        int current_depth = my_model->depth[current_pin - 1] - my_format.min_depth_ind;
+        int current_depth_pixel = (int)round(current_depth * my_format.depth_step_inch / inches_per_pixel);
+        canvas_draw_line(canvas, pin_center_pixel - pin_half_width_pixel, top_contour_pixel + current_depth_pixel, pin_center_pixel + pin_half_width_pixel, top_contour_pixel + current_depth_pixel);
+        int last_depth = my_model->depth[current_pin - 2] - my_format.min_depth_ind;
+        int next_depth = my_model->depth[current_pin] - my_format.min_depth_ind;        
         if(current_pin == 1){
-            canvas_draw_line(canvas, 0, top_contour_pixel, pin_center_pixel - pin_half_width_pixel - depth_pixel_i, top_contour_pixel);
+            canvas_draw_line(canvas, 0, top_contour_pixel, pin_center_pixel - pin_half_width_pixel - current_depth_pixel, top_contour_pixel);
             last_depth = 0;
+            pre_extra_x_pixel = max(current_depth_pixel + pin_half_width_pixel, 0);
         } 
         if(current_pin == my_model->total_pin) {
-            next_depth = my_format.max_depth_ind;
+            next_depth = my_format.min_depth_ind;
         }
-        if ((last_depth + my_model->depth[current_pin - 1]) > 4) { //yes intersection  
-            int pre_extra_x_pixel = pin_step_pixel - post_extra_x_pixel;
+        if ((last_depth + current_depth) > my_format.clearance && current_depth != my_format.min_depth_ind) { //yes intersection  
+            
+            if (current_pin != 1) {pre_extra_x_pixel = max(pin_step_pixel - post_extra_x_pixel,0);}
             canvas_draw_line(
                 canvas,
                 pin_center_pixel - pre_extra_x_pixel,
-                top_contour_pixel + depth_pixel_i - (pre_extra_x_pixel - pin_half_width_pixel),
+                top_contour_pixel + current_depth_pixel - (pre_extra_x_pixel - pin_half_width_pixel),
                 pin_center_pixel - pin_half_width_pixel,
-                top_contour_pixel + depth_pixel_i
+                top_contour_pixel + current_depth_pixel
                 );
         } else {
             canvas_draw_line(
                 canvas,
-                pin_center_pixel - pin_half_width_pixel - depth_pixel_i,
+                pin_center_pixel - pin_half_width_pixel - current_depth_pixel,
                 top_contour_pixel,
                 pin_center_pixel - pin_half_width_pixel,
-                top_contour_pixel + depth_pixel_i
+                top_contour_pixel + current_depth_pixel
                 );
         }
-        if ((my_model->depth[current_pin - 1] + next_depth) > 4) { //yes intersection
-            double numerator = (double)my_model->depth[current_pin - 1];
-            double denominator = (double)(my_model->depth[current_pin - 1] + next_depth);
-            double product = numerator / denominator * pin_step_pixel;   
+        if ((current_depth + next_depth) > my_format.clearance && current_depth != my_format.min_depth_ind) { //yes intersection
+            double numerator = (double)current_depth;
+            double denominator = (double)(current_depth + next_depth);
+            double product = (numerator / denominator) * pin_step_pixel;   
             post_extra_x_pixel = (int)round(product);         
             canvas_draw_line(
                 canvas,
                 pin_center_pixel + pin_half_width_pixel,
-                top_contour_pixel + depth_pixel_i,
+                top_contour_pixel + current_depth_pixel,
                 pin_center_pixel + post_extra_x_pixel,
-                top_contour_pixel + depth_pixel_i - (post_extra_x_pixel - pin_half_width_pixel)
+                top_contour_pixel + current_depth_pixel - (post_extra_x_pixel - pin_half_width_pixel)
                 );
         } else { // no intersection
             canvas_draw_line(
                 canvas,
                 pin_center_pixel + pin_half_width_pixel,
-                top_contour_pixel + depth_pixel_i,
-                pin_center_pixel + pin_half_width_pixel + depth_pixel_i,
+                top_contour_pixel + current_depth_pixel,
+                pin_center_pixel + pin_half_width_pixel + current_depth_pixel,
                 top_contour_pixel
                 );
         }
@@ -460,7 +469,7 @@ static bool key_maker_view_game_input_callback(InputEvent* event, void* context)
                     app->view_game,
                     KeyMakerGameModel * model,
                     {
-                        if(model->depth[model->pin_slc - 1] > model->format.start_depth_ind) {
+                        if(model->depth[model->pin_slc - 1] > model->format.min_depth_ind) {
                             if (model->pin_slc == 1) { //first pin only limited by the next one
                                 if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs)
                                 model->depth[model->pin_slc - 1]--;
@@ -563,10 +572,7 @@ static KeyMakerApp* key_maker_app_alloc() {
         COUNT_OF(format_names),
         key_maker_total_pin_change,
         app);
-    uint8_t format_index = 1;
-    variable_item_set_current_value_index(item, format_index);
-    variable_item_set_current_value_text(item, format_names[format_index]);
-
+        
     FuriString* key_name_str = furi_string_alloc();
     furi_string_set_str(key_name_str, key_name_default_value);
     app->key_name_item = variable_item_list_add(
@@ -594,12 +600,15 @@ static KeyMakerApp* key_maker_app_alloc() {
     view_set_custom_callback(app->view_game, key_maker_view_game_custom_event_callback);
     view_allocate_model(app->view_game, ViewModelTypeLockFree, sizeof(KeyMakerGameModel));
     KeyMakerGameModel* model = view_get_model(app->view_game);
-    initialize_depths(model);
+
     initialize_format(model);
-    model->format_index = format_index;
+    initialize_depths(model);
     model->key_name_str = key_name_str;
     model->pin_slc = 1;
     model->total_pin = model->format.pin_num;
+    variable_item_set_current_value_index(item, model->format_index);
+    variable_item_set_current_value_text(item, format_names[model->format_index]);
+
 
     view_dispatcher_add_view(app->view_dispatcher, KeyMakerViewGame, app->view_game);
 

@@ -13,9 +13,10 @@ const KeyFormat all_formats[] = {
     .uncut_depth_inch = 0.329,
     .deepest_depth_inch = 0.191,
     .depth_step_inch = 0.023,
-    .start_depth_ind = 1,
+    .min_depth_ind = 1,
     .max_depth_ind = 7,
-    .macs = 4
+    .macs = 4,
+    .clearance = 4
     },
 
     {
@@ -29,8 +30,9 @@ const KeyFormat all_formats[] = {
     .uncut_depth_inch = 0.335,
     .deepest_depth_inch = 0.2,
     .depth_step_inch = 0.015,
-    .start_depth_ind = 0,
+    .min_depth_ind = 0,
     .max_depth_ind = 9,
-    .macs = 7
+    .macs = 7,
+    .clearance = 4
     }
 };
