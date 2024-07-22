@@ -1,5 +1,7 @@
 # Key Copier App
-
+- This app allows one to draw a contour around a physical key by overlaying the key on top of the Flipper zero's screen. 
+- To use it, go to Measure, and place your key on top of the screen. Align the key with the contour on the screen. Adjust the bitting depths for each pin until the contour matches the key. The number shown on the top left corner will be the bitting pattern of this key. 
+- Graphic tutorial coming up soon. 
 ## Measure
 - Use the left and right button to move around pins. 
 - Use the up and down button to adjust the depth of the bitting. 
