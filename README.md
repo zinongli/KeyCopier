@@ -3,13 +3,13 @@
 ## Overview
 
 This application has three submenu items:
-* Measure
+Measure
 - Use the left and right button to move around pins. 
 - Use the up and down button to adjust the depth of the bitting. 
-* Config
+Config
 - There are currently two key formats to choose from: Kwikset (KW1) and Schalage (SC4). 
 - The key name is reserved for future development of the file saving feature.
-* About
+About
 - Key Maker App 0.1
 - Based on Derak Jamison's Skeleton App
 - Project channel: https://discord.gg/BwNar4pAQ9
