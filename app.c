@@ -548,7 +548,7 @@ static KeyMakerApp* key_maker_app_alloc() {
 
     app->submenu = submenu_alloc();
     submenu_add_item(
-        app->submenu, "Match", KeyMakerSubmenuIndexGame, key_maker_submenu_callback, app);
+        app->submenu, "Measure", KeyMakerSubmenuIndexGame, key_maker_submenu_callback, app);
     submenu_add_item(
         app->submenu, "Config", KeyMakerSubmenuIndexConfigure, key_maker_submenu_callback, app);
     submenu_add_item(
