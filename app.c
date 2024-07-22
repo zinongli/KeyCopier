@@ -9,7 +9,7 @@
 #include <gui/modules/variable_item_list.h>
 #include <notification/notification.h>
 #include <notification/notification_messages.h>
-#include "key_maker_icons.h"
+#include "key_copier_icons.h"
 #include "key_formats.h"
 
 #define TAG "KeyMaker"
@@ -100,7 +100,7 @@ void initialize_model(KeyMakerGameModel* model) {
  * @param      _context  The context - unused
  * @return     next view id
 */
-static uint32_t key_maker_navigation_exit_callback(void* _context) {
+static uint32_t key_copier_navigation_exit_callback(void* _context) {
     UNUSED(_context);
     return VIEW_NONE;
 }
@@ -112,7 +112,7 @@ static uint32_t key_maker_navigation_exit_callback(void* _context) {
  * @param      _context  The context - unused
  * @return     next view id
 */
-static uint32_t key_maker_navigation_submenu_callback(void* _context) {
+static uint32_t key_copier_navigation_submenu_callback(void* _context) {
     UNUSED(_context);
     return KeyMakerViewSubmenu;
 }
@@ -124,7 +124,7 @@ static uint32_t key_maker_navigation_submenu_callback(void* _context) {
  * @param      _context  The context - unused
  * @return     next view id
 */
-static uint32_t key_maker_navigation_configure_callback(void* _context) {
+static uint32_t key_copier_navigation_configure_callback(void* _context) {
     UNUSED(_context);
     return KeyMakerViewConfigure;
 }
@@ -135,7 +135,7 @@ static uint32_t key_maker_navigation_configure_callback(void* _context) {
  * @param      context  The context - KeyMakerApp object.
  * @param      index     The KeyMakerSubmenuIndex item that was clicked.
 */
-static void key_maker_submenu_callback(void* context, uint32_t index) {
+static void key_copier_submenu_callback(void* context, uint32_t index) {
     KeyMakerApp* app = (KeyMakerApp*)context;
     switch(index) {
     case KeyMakerSubmenuIndexConfigure:
@@ -157,7 +157,7 @@ static void key_maker_submenu_callback(void* context, uint32_t index) {
 */
 static const char* total_pin_config_label = "Key Format";
 static char* format_names[] = {"Kwikset", "Schlage"};
-static void key_maker_total_pin_change(VariableItem* item) {
+static void key_copier_total_pin_change(VariableItem* item) {
     KeyMakerApp* app = variable_item_get_context(item);
     uint8_t format_index = variable_item_get_current_value_index(item);
     variable_item_set_current_value_text(item, format_names[format_index]);
@@ -168,7 +168,10 @@ static void key_maker_total_pin_change(VariableItem* item) {
     if(model->depth != NULL) {
         free(model->depth);
     }
-    model->depth = (uint8_t*)malloc((model->total_pin + 1) * sizeof(uint8_t));
+    model->depth = (uint8_t*)malloc((model->format.pin_num + 1) * sizeof(uint8_t));
+    for(uint8_t i = 0; i <= model->format.pin_num; i++) {
+        model->depth[i] = model->format.min_depth_ind;
+    }
 }
 
 /**
@@ -179,7 +182,7 @@ static void key_maker_total_pin_change(VariableItem* item) {
 static const char* key_name_config_label = "Key Name";
 static const char* key_name_entry_text = "Enter name";
 static const char* key_name_default_value = "Key 1";
-static void key_maker_key_name_text_updated(void* context) {
+static void key_copier_key_name_text_updated(void* context) {
     KeyMakerApp* app = (KeyMakerApp*)context;
     bool redraw = true;
     with_view_model(
@@ -201,7 +204,7 @@ static void key_maker_key_name_text_updated(void* context) {
  * @param      context  The context - KeyMakerApp object.
  * @param      index - The index of the item that was clicked.
 */
-static void key_maker_setting_item_clicked(void* context, uint32_t index) {
+static void key_copier_setting_item_clicked(void* context, uint32_t index) {
     KeyMakerApp* app = (KeyMakerApp*)context;
     index++; // The index starts at zero, but we want to start at 1.
 
@@ -223,11 +226,11 @@ static void key_maker_setting_item_clicked(void* context, uint32_t index) {
             },
             redraw);
 
-        // Configure the text input.  When user enters text and clicks OK, key_maker_setting_text_updated be called.
+        // Configure the text input.  When user enters text and clicks OK, key_copier_setting_text_updated be called.
         bool clear_previous_text = false;
         text_input_set_result_callback(
             app->text_input,
-            key_maker_key_name_text_updated,
+            key_copier_key_name_text_updated,
             app,
             app->temp_buffer,
             app->temp_buffer_size,
@@ -235,7 +238,7 @@ static void key_maker_setting_item_clicked(void* context, uint32_t index) {
 
         // Pressing the BACK button will reload the configure screen.
         view_set_previous_callback(
-            text_input_get_view(app->text_input), key_maker_navigation_configure_callback);
+            text_input_get_view(app->text_input), key_copier_navigation_configure_callback);
 
         // Show text input dialog.
         view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewTextInput);
@@ -257,7 +260,7 @@ static inline int max(int a, int b) {
 static double inches_per_pixel = (double)INCHES_PER_PIXEL;
 int pin_half_width_pixel;
 int pin_step_pixel;
-static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
+static void key_copier_view_game_draw_callback(Canvas* canvas, void* model) {
     KeyMakerGameModel* my_model = (KeyMakerGameModel*)model;
     KeyFormat my_format = my_model->format;
     static bool initialized = false;
@@ -274,7 +277,7 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
         int pin_center_pixel = (int)round(current_center_pixel / inches_per_pixel);
 
         int top_contour_pixel = (int)round(63 - my_format.uncut_depth_inch / inches_per_pixel);
-        canvas_draw_line(canvas, pin_center_pixel, 20, pin_center_pixel, 50);
+        canvas_draw_line(canvas, pin_center_pixel, 25, pin_center_pixel, 50);
         int current_depth = my_model->depth[current_pin - 1] - my_format.min_depth_ind;
         int current_depth_pixel = (int)round(current_depth * my_format.depth_step_inch / inches_per_pixel);
         canvas_draw_line(canvas, pin_center_pixel - pin_half_width_pixel, top_contour_pixel + current_depth_pixel, pin_center_pixel + pin_half_width_pixel, top_contour_pixel + current_depth_pixel);
@@ -290,11 +293,11 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
         }
         if ((last_depth + current_depth) > my_format.clearance && current_depth != my_format.min_depth_ind) { //yes intersection  
             
-            if (current_pin != 1) {pre_extra_x_pixel = max(pin_step_pixel - post_extra_x_pixel,pin_half_width_pixel);}
+            if (current_pin != 1) {pre_extra_x_pixel = min(max(pin_step_pixel - post_extra_x_pixel,pin_half_width_pixel),pin_step_pixel - pin_half_width_pixel - 1);}
             canvas_draw_line(
                 canvas,
                 pin_center_pixel - pre_extra_x_pixel,
-                top_contour_pixel + current_depth_pixel - (pre_extra_x_pixel - pin_half_width_pixel),
+                top_contour_pixel + max(current_depth_pixel - (pre_extra_x_pixel - pin_half_width_pixel),0),
                 pin_center_pixel - pin_half_width_pixel,
                 top_contour_pixel + current_depth_pixel
                 );
@@ -311,13 +314,13 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
             double numerator = (double)current_depth;
             double denominator = (double)(current_depth + next_depth);
             double product = (numerator / denominator) * pin_step_pixel;   
-            post_extra_x_pixel = (int)max(round(product),pin_half_width_pixel);         
+            post_extra_x_pixel = (int)min(max(round(product),pin_half_width_pixel),pin_step_pixel - pin_half_width_pixel - 1);         
             canvas_draw_line(
                 canvas,
                 pin_center_pixel + pin_half_width_pixel,
                 top_contour_pixel + current_depth_pixel,
                 pin_center_pixel + post_extra_x_pixel,
-                top_contour_pixel + current_depth_pixel - (post_extra_x_pixel - pin_half_width_pixel)
+                top_contour_pixel + max(current_depth_pixel - (post_extra_x_pixel - pin_half_width_pixel),0)
                 );
         } else { // no intersection
             canvas_draw_line(
@@ -336,9 +339,9 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
     canvas_draw_line(canvas, level_contour_pixel, 62, level_contour_pixel+step_pixel, 62-step_pixel);
 
     int slc_pin_pixel = (int)round((my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch)/ inches_per_pixel);
-    canvas_draw_str(canvas, slc_pin_pixel-2, 18, "*");
+    canvas_draw_str(canvas, slc_pin_pixel-2, 23, "*");
 
-    FuriString* xstr = furi_string_alloc();
+    FuriString* xstr = furi_string_alloc(); 
     int buffer_size = my_model->total_pin + 1; 
     char depth_str[buffer_size];
     depth_str[0] = '\0'; // Initialize the string
@@ -352,7 +355,7 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
         }
         pos += written;
     }
-    furi_string_printf(xstr, "depth: %s", depth_str);
+    furi_string_printf(xstr, "bitting: %s", depth_str);
     canvas_draw_str(canvas, 0, 10, furi_string_get_cstr(xstr));
     
     //furi_string_printf(xstr, "Num of Pins: %s", format_names[my_model->format_index]);
@@ -365,7 +368,7 @@ static void key_maker_view_game_draw_callback(Canvas* canvas, void* model) {
  * @details    This function is called when the timer is elapsed.  We use this to queue a redraw event.
  * @param      context  The context - KeyMakerApp object.
 */
-static void key_maker_view_game_timer_callback(void* context) {
+static void key_copier_view_game_timer_callback(void* context) {
     KeyMakerApp* app = (KeyMakerApp*)context;
     view_dispatcher_send_custom_event(app->view_dispatcher, KeyMakerEventIdRedrawScreen);
 }
@@ -376,12 +379,12 @@ static void key_maker_view_game_timer_callback(void* context) {
  *           redraw the screen periodically (so the random number is refreshed).
  * @param      context  The context - KeyMakerApp object.
 */
-static void key_maker_view_game_enter_callback(void* context) {
+static void key_copier_view_game_enter_callback(void* context) {
     uint32_t period = furi_ms_to_ticks(200);
     KeyMakerApp* app = (KeyMakerApp*)context;
     furi_assert(app->timer == NULL);
     app->timer =
-        furi_timer_alloc(key_maker_view_game_timer_callback, FuriTimerTypePeriodic, context);
+        furi_timer_alloc(key_copier_view_game_timer_callback, FuriTimerTypePeriodic, context);
     furi_timer_start(app->timer, period);
 }
 
@@ -390,7 +393,7 @@ static void key_maker_view_game_enter_callback(void* context) {
  * @details    This function is called when the user exits the game screen.  We stop the timer.
  * @param      context  The context - KeyMakerApp object.
 */
-static void key_maker_view_game_exit_callback(void* context) {
+static void key_copier_view_game_exit_callback(void* context) {
     KeyMakerApp* app = (KeyMakerApp*)context;
     furi_timer_stop(app->timer);
     furi_timer_free(app->timer);
@@ -403,7 +406,7 @@ static void key_maker_view_game_exit_callback(void* context) {
  * @param      event    The event id - KeyMakerEventId value.
  * @param      context  The context - KeyMakerApp object.
 */
-static bool key_maker_view_game_custom_event_callback(uint32_t event, void* context) {
+static bool key_copier_view_game_custom_event_callback(uint32_t event, void* context) {
     KeyMakerApp* app = (KeyMakerApp*)context;
     switch(event) {
     case KeyMakerEventIdRedrawScreen:
@@ -429,7 +432,7 @@ static bool key_maker_view_game_custom_event_callback(uint32_t event, void* cont
  * @param      context  The context - KeyMakerApp object.
  * @return     true if the event was handled, false otherwise.
 */
-static bool key_maker_view_game_input_callback(InputEvent* event, void* context) {
+static bool key_copier_view_game_input_callback(InputEvent* event, void* context) {
     KeyMakerApp* app = (KeyMakerApp*)context;
     if(event->type == InputTypeShort) {
         switch(event->key) {
@@ -519,9 +522,9 @@ static bool key_maker_view_game_input_callback(InputEvent* event, void* context)
         }
     } else if(event->type == InputTypePress) {
         if(event->key == InputKeyOk) {
-            // We choose to send a custom event when user presses OK button.  key_maker_custom_event_callback will
+            // We choose to send a custom event when user presses OK button.  key_copier_custom_event_callback will
             // handle our KeyMakerEventIdOkPressed event.  We could have just put the code from
-            // key_maker_custom_event_callback here, it's a matter of preference.
+            // key_copier_custom_event_callback here, it's a matter of preference.
             view_dispatcher_send_custom_event(app->view_dispatcher, KeyMakerEventIdOkPressed);
             return true;
         }
@@ -531,11 +534,11 @@ static bool key_maker_view_game_input_callback(InputEvent* event, void* context)
 }
 
 /**
- * @brief      Allocate the key_maker application.
- * @details    This function allocates the key_maker application resources.
+ * @brief      Allocate the key_copier application.
+ * @details    This function allocates the key_copier application resources.
  * @return     KeyMakerApp object.
 */
-static KeyMakerApp* key_maker_app_alloc() {
+static KeyMakerApp* key_copier_app_alloc() {
     KeyMakerApp* app = (KeyMakerApp*)malloc(sizeof(KeyMakerApp));
 
     Gui* gui = furi_record_open(RECORD_GUI);
@@ -547,12 +550,12 @@ static KeyMakerApp* key_maker_app_alloc() {
 
     app->submenu = submenu_alloc();
     submenu_add_item(
-        app->submenu, "Measure", KeyMakerSubmenuIndexGame, key_maker_submenu_callback, app);
+        app->submenu, "Measure", KeyMakerSubmenuIndexGame, key_copier_submenu_callback, app);
     submenu_add_item(
-        app->submenu, "Config", KeyMakerSubmenuIndexConfigure, key_maker_submenu_callback, app);
+        app->submenu, "Config", KeyMakerSubmenuIndexConfigure, key_copier_submenu_callback, app);
     submenu_add_item(
-        app->submenu, "About", KeyMakerSubmenuIndexAbout, key_maker_submenu_callback, app);
-    view_set_previous_callback(submenu_get_view(app->submenu), key_maker_navigation_exit_callback);
+        app->submenu, "About", KeyMakerSubmenuIndexAbout, key_copier_submenu_callback, app);
+    view_set_previous_callback(submenu_get_view(app->submenu), key_copier_navigation_exit_callback);
     view_dispatcher_add_view(
         app->view_dispatcher, KeyMakerViewSubmenu, submenu_get_view(app->submenu));
     view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewSubmenu);
@@ -569,7 +572,7 @@ static KeyMakerApp* key_maker_app_alloc() {
         app->variable_item_list_config,
         total_pin_config_label,
         COUNT_OF(format_names),
-        key_maker_total_pin_change,
+        key_copier_total_pin_change,
         app);
         
     FuriString* key_name_str = furi_string_alloc();
@@ -579,24 +582,24 @@ static KeyMakerApp* key_maker_app_alloc() {
     variable_item_set_current_value_text(
         app->key_name_item, furi_string_get_cstr(key_name_str));
     variable_item_list_set_enter_callback(
-        app->variable_item_list_config, key_maker_setting_item_clicked, app);
+        app->variable_item_list_config, key_copier_setting_item_clicked, app);
 
     view_set_previous_callback(
         variable_item_list_get_view(app->variable_item_list_config),
-        key_maker_navigation_submenu_callback);
+        key_copier_navigation_submenu_callback);
     view_dispatcher_add_view(
         app->view_dispatcher,
         KeyMakerViewConfigure,
         variable_item_list_get_view(app->variable_item_list_config));
 
     app->view_game = view_alloc();
-    view_set_draw_callback(app->view_game, key_maker_view_game_draw_callback);
-    view_set_input_callback(app->view_game, key_maker_view_game_input_callback);
-    view_set_previous_callback(app->view_game, key_maker_navigation_submenu_callback);
-    view_set_enter_callback(app->view_game, key_maker_view_game_enter_callback);
-    view_set_exit_callback(app->view_game, key_maker_view_game_exit_callback);
+    view_set_draw_callback(app->view_game, key_copier_view_game_draw_callback);
+    view_set_input_callback(app->view_game, key_copier_view_game_input_callback);
+    view_set_previous_callback(app->view_game, key_copier_navigation_submenu_callback);
+    view_set_enter_callback(app->view_game, key_copier_view_game_enter_callback);
+    view_set_exit_callback(app->view_game, key_copier_view_game_exit_callback);
     view_set_context(app->view_game, app);
-    view_set_custom_callback(app->view_game, key_maker_view_game_custom_event_callback);
+    view_set_custom_callback(app->view_game, key_copier_view_game_custom_event_callback);
     view_allocate_model(app->view_game, ViewModelTypeLockFree, sizeof(KeyMakerGameModel));
     KeyMakerGameModel* model = view_get_model(app->view_game);
 
@@ -619,7 +622,7 @@ static KeyMakerApp* key_maker_app_alloc() {
         64,
         "Key Maker App 0.1\nGithub: https://github.com/zinongli/KeyCopier \nBased on Derak Jamison's \nSkeleton App\nProject channel: \nhttps://discord.gg/BwNar4pAQ9");
     view_set_previous_callback(
-        widget_get_view(app->widget_about), key_maker_navigation_submenu_callback);
+        widget_get_view(app->widget_about), key_copier_navigation_submenu_callback);
     view_dispatcher_add_view(
         app->view_dispatcher, KeyMakerViewAbout, widget_get_view(app->widget_about));
 
@@ -633,11 +636,11 @@ static KeyMakerApp* key_maker_app_alloc() {
 }
 
 /**
- * @brief      Free the key_maker application.
- * @details    This function frees the key_maker application resources.
- * @param      app  The key_maker application object.
+ * @brief      Free the key_copier application.
+ * @details    This function frees the key_copier application resources.
+ * @param      app  The key_copier application object.
 */
-static void key_maker_app_free(KeyMakerApp* app) {
+static void key_copier_app_free(KeyMakerApp* app) {
 #ifdef BACKLIGHT_ON
     notification_message(app->notifications, &sequence_display_backlight_enforce_auto);
 #endif
@@ -670,18 +673,18 @@ static void key_maker_app_free(KeyMakerApp* app) {
 }
 
 /**
- * @brief      Main function for key_maker application.
- * @details    This function is the entry point for the key_maker application.  It should be defined in
+ * @brief      Main function for key_copier application.
+ * @details    This function is the entry point for the key_copier application.  It should be defined in
  *           application.fam as the entry_point setting.
  * @param      _p  Input parameter - unused
  * @return     0 - Success
 */
-int32_t main_key_maker_app(void* _p) {
+int32_t main_key_copier_app(void* _p) {
     UNUSED(_p);
 
-    KeyMakerApp* app = key_maker_app_alloc();
+    KeyMakerApp* app = key_copier_app_alloc();
     view_dispatcher_run(app->view_dispatcher);
 
-    key_maker_app_free(app);
+    key_copier_app_free(app);
     return 0;
 }
