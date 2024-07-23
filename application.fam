@@ -1,8 +1,8 @@
 App(
-    appid="key_maker",
-    name="Key Maker",
+    appid="key_copier",
+    name="Key Copier",
     apptype=FlipperAppType.EXTERNAL,
-    entry_point="main_key_maker_app",
+    entry_point="main_key_copier_app",
     stack_size=4 * 1024,
     requires=[
         "gui",
@@ -11,5 +11,5 @@ App(
     fap_icon="icon.png",
     fap_category="Tools",
     fap_icon_assets="assets",
-    fap_description="This is the key maker app.",
+    fap_description="This is the key copier app.",
 )

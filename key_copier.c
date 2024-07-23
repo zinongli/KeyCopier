@@ -3,6 +3,7 @@
 #include <gui/gui.h>
 #include <gui/view.h>
 #include <gui/view_dispatcher.h>
+#include <gui/modules/popup.h>
 #include <gui/modules/submenu.h>
 #include <gui/modules/text_input.h>
 #include <gui/modules/widget.h>
@@ -11,10 +12,13 @@
 #include <notification/notification_messages.h>
 #include "key_copier_icons.h"
 #include "key_formats.h"
+#include "key_copier.h"
+#include <applications/services/storage/storage.h>
+#include <stdbool.h>
 
-#define TAG "KeyMaker"
+#define TAG "KeyCopier"
 
-#define INCHES_PER_px 0.00978
+#define INCHES_PER_PX 0.00978
 
 #define FIRST_PIN_INCH 0.247
 #define LAST_PIN_INCH 0.997
@@ -32,24 +36,24 @@
 
 // Our application menu has 3 items.  You can add more items if you want.
 typedef enum {
-    KeyMakerSubmenuIndexConfigure,
-    KeyMakerSubmenuIndexGame,
-    KeyMakerSubmenuIndexAbout,
-} KeyMakerSubmenuIndex;
+    KeyCopierSubmenuIndexConfigure,
+    KeyCopierSubmenuIndexGame,
+    KeyCopierSubmenuIndexAbout,
+} KeyCopierSubmenuIndex;
 
 // Each view is a screen we show the user.
 typedef enum {
-    KeyMakerViewSubmenu, // The menu when the app starts
-    KeyMakerViewTextInput, // Input for configuring text settings
-    KeyMakerViewConfigure, // The configuration screen
-    KeyMakerViewGame, // The main screen
-    KeyMakerViewAbout, // The about screen with directions, link to social channel, etc.
-} KeyMakerView;
+    KeyCopierViewSubmenu, // The menu when the app starts
+    KeyCopierViewTextInput, // Input for configuring text settings
+    KeyCopierViewConfigure, // The configuration screen
+    KeyCopierViewGame, // The main screen
+    KeyCopierViewAbout, // The about screen with directions, link to social channel, etc.
+} KeyCopierView;
 
 typedef enum {
-    KeyMakerEventIdRedrawScreen = 0, // Custom event to redraw the screen
-    KeyMakerEventIdOkPressed = 42, // Custom event to process OK button getting pressed down
-} KeyMakerEventId;
+    KeyCopierEventIdRedrawScreen = 0, // Custom event to redraw the screen
+    KeyCopierEventIdOkPressed = 42, // Custom event to process OK button getting pressed down
+} KeyCopierEventId;
 
 typedef struct {
     ViewDispatcher* view_dispatcher; // Switches between our views
@@ -65,7 +69,7 @@ typedef struct {
     uint32_t temp_buffer_size; // Size of temporary buffer
 
     FuriTimer* timer; // Timer for redrawing the screen
-} KeyMakerApp;
+} KeyCopierApp;
 
 
 typedef struct {
@@ -75,14 +79,14 @@ typedef struct {
     uint8_t total_pin; // The total number of pins we are adjusting
     uint8_t* depth; // The cutting depth
     KeyFormat format;
-} KeyMakerGameModel;
+} KeyCopierGameModel;
 
-void initialize_format(KeyMakerGameModel* model) {
+void initialize_format(KeyCopierGameModel* model) {
     model->format_index = 0;
     memcpy(&model->format, &all_formats[model->format_index], sizeof(KeyFormat));
 }
 
-void initialize_model(KeyMakerGameModel* model) {
+void initialize_model(KeyCopierGameModel* model) {
     if(model->depth != NULL) {
         free(model->depth);
     }
@@ -114,7 +118,7 @@ static uint32_t key_copier_navigation_exit_callback(void* _context) {
 */
 static uint32_t key_copier_navigation_submenu_callback(void* _context) {
     UNUSED(_context);
-    return KeyMakerViewSubmenu;
+    return KeyCopierViewSubmenu;
 }
 
 /**
@@ -126,26 +130,26 @@ static uint32_t key_copier_navigation_submenu_callback(void* _context) {
 */
 static uint32_t key_copier_navigation_configure_callback(void* _context) {
     UNUSED(_context);
-    return KeyMakerViewConfigure;
+    return KeyCopierViewConfigure;
 }
 
 /**
  * @brief      Handle submenu item selection.
  * @details    This function is called when user selects an item from the submenu.
- * @param      context  The context - KeyMakerApp object.
- * @param      index     The KeyMakerSubmenuIndex item that was clicked.
+ * @param      context  The context - KeyCopierApp object.
+ * @param      index     The KeyCopierSubmenuIndex item that was clicked.
 */
 static void key_copier_submenu_callback(void* context, uint32_t index) {
-    KeyMakerApp* app = (KeyMakerApp*)context;
+    KeyCopierApp* app = (KeyCopierApp*)context;
     switch(index) {
-    case KeyMakerSubmenuIndexConfigure:
-        view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewConfigure);
+    case KeyCopierSubmenuIndexConfigure:
+        view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewConfigure);
         break;
-    case KeyMakerSubmenuIndexGame:
-        view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewGame);
+    case KeyCopierSubmenuIndexGame:
+        view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewGame);
         break;
-    case KeyMakerSubmenuIndexAbout:
-        view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewAbout);
+    case KeyCopierSubmenuIndexAbout:
+        view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewAbout);
         break;
     default:
         break;
@@ -158,10 +162,10 @@ static void key_copier_submenu_callback(void* context, uint32_t index) {
 static const char* total_pin_config_label = "Key Format";
 static char* format_names[] = {"Kwikset", "Schlage"};
 static void key_copier_total_pin_change(VariableItem* item) {
-    KeyMakerApp* app = variable_item_get_context(item);
+    KeyCopierApp* app = variable_item_get_context(item);
     uint8_t format_index = variable_item_get_current_value_index(item);
     variable_item_set_current_value_text(item, format_names[format_index]);
-    KeyMakerGameModel* model = view_get_model(app->view_game);
+    KeyCopierGameModel* model = view_get_model(app->view_game);
     model->format_index = format_index;
     model->format = all_formats[format_index];
     model->total_pin = model->format.pin_num;
@@ -174,38 +178,97 @@ static void key_copier_total_pin_change(VariableItem* item) {
     }
 }
 
+void ensure_dir_exists(Storage *storage)
+{
+    // If apps_data directory doesn't exist, create it.
+    if (!storage_dir_exists(storage, KEY_COPIER_APPS_DATA_FOLDER))
+    {
+        FURI_LOG_I(TAG, "Creating directory: %s", KEY_COPIER_APPS_DATA_FOLDER);
+        storage_simply_mkdir(storage, KEY_COPIER_APPS_DATA_FOLDER);
+    }
+    else
+    {
+        FURI_LOG_I(TAG, "Directory exists: %s", KEY_COPIER_APPS_DATA_FOLDER);
+    }
+
+    // If wiegand directory doesn't exist, create it.
+    if (!storage_dir_exists(storage, KEY_COPIER_SAVE_FOLDER))
+    {
+        FURI_LOG_I(TAG, "Creating directory: %s", KEY_COPIER_SAVE_FOLDER);
+        storage_simply_mkdir(storage, KEY_COPIER_SAVE_FOLDER);
+    }
+    else
+    {
+        FURI_LOG_I(TAG, "Directory exists: %s", KEY_COPIER_SAVE_FOLDER);
+    }
+}
+
 /**
  * Our 2nd sample setting is a text field.  When the user clicks OK on the configuration 
  * setting we use a text input screen to allow the user to enter a name.  This function is
  * called when the user clicks OK on the text input screen.
 */
-static const char* key_name_config_label = "Key Name";
+static const char* key_name_config_label = "Save Key";
 static const char* key_name_entry_text = "Enter name";
 static const char* key_name_default_value = "Key 1";
 static void key_copier_key_name_text_updated(void* context) {
-    KeyMakerApp* app = (KeyMakerApp*)context;
+    KeyCopierApp* app = (KeyCopierApp*)context;
+    KeyCopierGameModel* model = view_get_model(app->view_game);
     bool redraw = true;
     with_view_model(
         app->view_game,
-        KeyMakerGameModel * model,
+        KeyCopierGameModel * model,
         {
             furi_string_set(model->key_name_str, app->temp_buffer);
             variable_item_set_current_value_text(
                 app->key_name_item, furi_string_get_cstr(model->key_name_str));
         },
         redraw);
-    view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewConfigure);
-}
+    FuriString *buffer = furi_string_alloc();
+    FuriString *file_path = furi_string_alloc();
+    furi_string_printf(
+        file_path, "%s/%s%s", KEY_COPIER_SAVE_FOLDER, furi_string_get_cstr(model->key_name_str), KEY_COPIER_SAVE_EXTENSION);
 
+    Storage *storage = furi_record_open(RECORD_STORAGE);
+    ensure_dir_exists(storage);
+    File *data_file = storage_file_alloc(storage);
+    if (storage_file_open(
+            data_file, furi_string_get_cstr(file_path), FSAM_WRITE, FSOM_OPEN_ALWAYS))
+    {
+        furi_string_printf(buffer, "Filetype: Flipper Key Copier File\n");
+        storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
+        furi_string_printf(buffer, "Version: 1.0\n");
+        storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
+        furi_string_printf(buffer, "Key Format: %s\n", model->format.format_name);
+        storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
+        furi_string_printf(buffer, "Pin Number: %d\n", model->format.pin_num);
+        storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
+        furi_string_printf(buffer, "Maximum Adjacent Cut Specification: %d\n", model->format.macs);
+        storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
+        furi_string_printf(buffer, "Bitting Pattern: ");
+        for (int i = 0; i < model->format.pin_num; i++)
+        {
+            furi_string_cat_printf(
+                buffer,
+                "%d ",
+                model->depth[i]);
+        }
+        furi_string_push_back(buffer, '\n');
+        storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
+
+        storage_file_close(data_file);
+    view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewConfigure);
+    }
+}
 /**
  * @brief      Callback when item in configuration screen is clicked.
  * @details    This function is called when user clicks OK on an item in the configuration screen.
  *            If the item clicked is our text field then we switch to the text input screen.
- * @param      context  The context - KeyMakerApp object.
+ * @param      context  The context - KeyCopierApp object.
  * @param      index - The index of the item that was clicked.
 */
 static void key_copier_setting_item_clicked(void* context, uint32_t index) {
-    KeyMakerApp* app = (KeyMakerApp*)context;
+    KeyCopierApp* app = (KeyCopierApp*)context;
     index++; // The index starts at zero, but we want to start at 1.
 
     // Our configuration UI has the 2nd item as a text field.
@@ -217,7 +280,7 @@ static void key_copier_setting_item_clicked(void* context, uint32_t index) {
         bool redraw = false;
         with_view_model(
             app->view_game,
-            KeyMakerGameModel * model,
+            KeyCopierGameModel * model,
             {
                 strncpy(
                     app->temp_buffer,
@@ -241,9 +304,10 @@ static void key_copier_setting_item_clicked(void* context, uint32_t index) {
             text_input_get_view(app->text_input), key_copier_navigation_configure_callback);
 
         // Show text input dialog.
-        view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewTextInput);
+        view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewTextInput);
     }
 }
+
 static inline int min(int a, int b) {
     return (a < b) ? a : b;
 }
@@ -257,10 +321,10 @@ static inline int max(int a, int b) {
  * @param      canvas  The canvas to draw on.
  * @param      model   The model - MyModel object.
 */
-static double inches_per_px = (double)INCHES_PER_px;
+static double inches_per_px = (double)INCHES_PER_PX;
 
 static void key_copier_view_game_draw_callback(Canvas* canvas, void* model) {
-    KeyMakerGameModel* my_model = (KeyMakerGameModel*)model;
+    KeyCopierGameModel* my_model = (KeyCopierGameModel*)model;
     KeyFormat my_format = my_model->format;
 
     int pin_half_width_px = (int)round((my_format.pin_width_inch / inches_per_px) / 2);
@@ -373,22 +437,22 @@ static void key_copier_view_game_draw_callback(Canvas* canvas, void* model) {
 /**
  * @brief      Callback for timer elapsed.
  * @details    This function is called when the timer is elapsed.  We use this to queue a redraw event.
- * @param      context  The context - KeyMakerApp object.
+ * @param      context  The context - KeyCopierApp object.
 */
 static void key_copier_view_game_timer_callback(void* context) {
-    KeyMakerApp* app = (KeyMakerApp*)context;
-    view_dispatcher_send_custom_event(app->view_dispatcher, KeyMakerEventIdRedrawScreen);
+    KeyCopierApp* app = (KeyCopierApp*)context;
+    view_dispatcher_send_custom_event(app->view_dispatcher, KeyCopierEventIdRedrawScreen);
 }
 
 /**
  * @brief      Callback when the user starts the game screen.
  * @details    This function is called when the user enters the game screen.  We start a timer to
  *           redraw the screen periodically (so the random number is refreshed).
- * @param      context  The context - KeyMakerApp object.
+ * @param      context  The context - KeyCopierApp object.
 */
 static void key_copier_view_game_enter_callback(void* context) {
-    uint32_t period = furi_ms_to_ticks(200);
-    KeyMakerApp* app = (KeyMakerApp*)context;
+    uint32_t period = furi_ms_to_ticks(500);
+    KeyCopierApp* app = (KeyCopierApp*)context;
     furi_assert(app->timer == NULL);
     app->timer =
         furi_timer_alloc(key_copier_view_game_timer_callback, FuriTimerTypePeriodic, context);
@@ -398,10 +462,10 @@ static void key_copier_view_game_enter_callback(void* context) {
 /**
  * @brief      Callback when the user exits the game screen.
  * @details    This function is called when the user exits the game screen.  We stop the timer.
- * @param      context  The context - KeyMakerApp object.
+ * @param      context  The context - KeyCopierApp object.
 */
 static void key_copier_view_game_exit_callback(void* context) {
-    KeyMakerApp* app = (KeyMakerApp*)context;
+    KeyCopierApp* app = (KeyCopierApp*)context;
     furi_timer_stop(app->timer);
     furi_timer_free(app->timer);
     app->timer = NULL;
@@ -410,21 +474,21 @@ static void key_copier_view_game_exit_callback(void* context) {
 /**
  * @brief      Callback for custom events.
  * @details    This function is called when a custom event is sent to the view dispatcher.
- * @param      event    The event id - KeyMakerEventId value.
- * @param      context  The context - KeyMakerApp object.
+ * @param      event    The event id - KeyCopierEventId value.
+ * @param      context  The context - KeyCopierApp object.
 */
 static bool key_copier_view_game_custom_event_callback(uint32_t event, void* context) {
-    KeyMakerApp* app = (KeyMakerApp*)context;
+    KeyCopierApp* app = (KeyCopierApp*)context;
     switch(event) {
-    case KeyMakerEventIdRedrawScreen:
+    case KeyCopierEventIdRedrawScreen:
         // Redraw screen by passing true to last parameter of with_view_model.
         {
             bool redraw = true;
             with_view_model(
-                app->view_game, KeyMakerGameModel * _model, { UNUSED(_model); }, redraw);
+                app->view_game, KeyCopierGameModel * _model, { UNUSED(_model); }, redraw);
             return true;
         }
-    case KeyMakerEventIdOkPressed:
+    case KeyCopierEventIdOkPressed:
         // Process the OK button.  We play a tone based on the x coordinate.
         return true;
     default:
@@ -436,11 +500,11 @@ static bool key_copier_view_game_custom_event_callback(uint32_t event, void* con
  * @brief      Callback for game screen input.
  * @details    This function is called when the user presses a button while on the game screen.
  * @param      event    The event - InputEvent object.
- * @param      context  The context - KeyMakerApp object.
+ * @param      context  The context - KeyCopierApp object.
  * @return     true if the event was handled, false otherwise.
 */
 static bool key_copier_view_game_input_callback(InputEvent* event, void* context) {
-    KeyMakerApp* app = (KeyMakerApp*)context;
+    KeyCopierApp* app = (KeyCopierApp*)context;
     if(event->type == InputTypeShort) {
         switch(event->key) {
             case InputKeyLeft: {
@@ -448,7 +512,7 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
                 bool redraw = true;
                 with_view_model(
                     app->view_game,
-                    KeyMakerGameModel * model,
+                    KeyCopierGameModel * model,
                     {
                         if(model->pin_slc > 1) {
                             model->pin_slc--;
@@ -462,7 +526,7 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
                 bool redraw = true;
                 with_view_model(
                     app->view_game,
-                    KeyMakerGameModel * model,
+                    KeyCopierGameModel * model,
                     {
                         if(model->pin_slc < model->format.pin_num) {
                             model->pin_slc++;
@@ -476,7 +540,7 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
                 bool redraw = true;
                 with_view_model(
                     app->view_game,
-                    KeyMakerGameModel * model,
+                    KeyCopierGameModel * model,
                     {
                         if(model->depth[model->pin_slc - 1] > model->format.min_depth_ind) {
                             if (model->pin_slc == 1) { //first pin only limited by the next one
@@ -502,7 +566,7 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
                 bool redraw = true;
                 with_view_model(
                     app->view_game,
-                    KeyMakerGameModel * model,
+                    KeyCopierGameModel * model,
                     {
                         if(model->depth[model->pin_slc - 1] < model->format.max_depth_ind) {
                             if (model->pin_slc == 1) { //first pin only limited by the next one
@@ -527,14 +591,12 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
                 // Handle other keys or do nothing
                 break;
         }
-    } else if(event->type == InputTypePress) {
-        if(event->key == InputKeyOk) {
-            // We choose to send a custom event when user presses OK button.  key_copier_custom_event_callback will
-            // handle our KeyMakerEventIdOkPressed event.  We could have just put the code from
-            // key_copier_custom_event_callback here, it's a matter of preference.
-            view_dispatcher_send_custom_event(app->view_dispatcher, KeyMakerEventIdOkPressed);
-            return true;
-        }
+    } else if(event->key == InputKeyOk) {
+        // We choose to send a custom event when user presses OK button.  key_copier_custom_event_callback will
+        // handle our KeyCopierEventIdOkPressed event.  We could have just put the code from
+        // key_copier_custom_event_callback here, it's a matter of preference.
+        view_dispatcher_send_custom_event(app->view_dispatcher, KeyCopierEventIdOkPressed);
+        return true;
     }
 
     return false;
@@ -543,10 +605,10 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
 /**
  * @brief      Allocate the key_copier application.
  * @details    This function allocates the key_copier application resources.
- * @return     KeyMakerApp object.
+ * @return     KeyCopierApp object.
 */
-static KeyMakerApp* key_copier_app_alloc() {
-    KeyMakerApp* app = (KeyMakerApp*)malloc(sizeof(KeyMakerApp));
+static KeyCopierApp* key_copier_app_alloc() {
+    KeyCopierApp* app = (KeyCopierApp*)malloc(sizeof(KeyCopierApp));
 
     Gui* gui = furi_record_open(RECORD_GUI);
 
@@ -557,19 +619,19 @@ static KeyMakerApp* key_copier_app_alloc() {
 
     app->submenu = submenu_alloc();
     submenu_add_item(
-        app->submenu, "Measure", KeyMakerSubmenuIndexGame, key_copier_submenu_callback, app);
+        app->submenu, "Measure", KeyCopierSubmenuIndexGame, key_copier_submenu_callback, app);
     submenu_add_item(
-        app->submenu, "Config", KeyMakerSubmenuIndexConfigure, key_copier_submenu_callback, app);
+        app->submenu, "Config", KeyCopierSubmenuIndexConfigure, key_copier_submenu_callback, app);
     submenu_add_item(
-        app->submenu, "About", KeyMakerSubmenuIndexAbout, key_copier_submenu_callback, app);
+        app->submenu, "About", KeyCopierSubmenuIndexAbout, key_copier_submenu_callback, app);
     view_set_previous_callback(submenu_get_view(app->submenu), key_copier_navigation_exit_callback);
     view_dispatcher_add_view(
-        app->view_dispatcher, KeyMakerViewSubmenu, submenu_get_view(app->submenu));
-    view_dispatcher_switch_to_view(app->view_dispatcher, KeyMakerViewSubmenu);
+        app->view_dispatcher, KeyCopierViewSubmenu, submenu_get_view(app->submenu));
+    view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewSubmenu);
 
     app->text_input = text_input_alloc();
     view_dispatcher_add_view(
-        app->view_dispatcher, KeyMakerViewTextInput, text_input_get_view(app->text_input));
+        app->view_dispatcher, KeyCopierViewTextInput, text_input_get_view(app->text_input));
     app->temp_buffer_size = 32;
     app->temp_buffer = (char*)malloc(app->temp_buffer_size);
 
@@ -596,7 +658,7 @@ static KeyMakerApp* key_copier_app_alloc() {
         key_copier_navigation_submenu_callback);
     view_dispatcher_add_view(
         app->view_dispatcher,
-        KeyMakerViewConfigure,
+        KeyCopierViewConfigure,
         variable_item_list_get_view(app->variable_item_list_config));
 
     app->view_game = view_alloc();
@@ -607,8 +669,8 @@ static KeyMakerApp* key_copier_app_alloc() {
     view_set_exit_callback(app->view_game, key_copier_view_game_exit_callback);
     view_set_context(app->view_game, app);
     view_set_custom_callback(app->view_game, key_copier_view_game_custom_event_callback);
-    view_allocate_model(app->view_game, ViewModelTypeLockFree, sizeof(KeyMakerGameModel));
-    KeyMakerGameModel* model = view_get_model(app->view_game);
+    view_allocate_model(app->view_game, ViewModelTypeLockFree, sizeof(KeyCopierGameModel));
+    KeyCopierGameModel* model = view_get_model(app->view_game);
 
     initialize_model(model);
     model->key_name_str = key_name_str;
@@ -618,7 +680,7 @@ static KeyMakerApp* key_copier_app_alloc() {
     variable_item_set_current_value_text(item, format_names[model->format_index]);
 
 
-    view_dispatcher_add_view(app->view_dispatcher, KeyMakerViewGame, app->view_game);
+    view_dispatcher_add_view(app->view_dispatcher, KeyCopierViewGame, app->view_game);
 
     app->widget_about = widget_alloc();
     widget_add_text_scroll_element(
@@ -631,7 +693,7 @@ static KeyMakerApp* key_copier_app_alloc() {
     view_set_previous_callback(
         widget_get_view(app->widget_about), key_copier_navigation_submenu_callback);
     view_dispatcher_add_view(
-        app->view_dispatcher, KeyMakerViewAbout, widget_get_view(app->widget_about));
+        app->view_dispatcher, KeyCopierViewAbout, widget_get_view(app->widget_about));
 
     app->notifications = furi_record_open(RECORD_NOTIFICATION);
 
@@ -647,21 +709,21 @@ static KeyMakerApp* key_copier_app_alloc() {
  * @details    This function frees the key_copier application resources.
  * @param      app  The key_copier application object.
 */
-static void key_copier_app_free(KeyMakerApp* app) {
+static void key_copier_app_free(KeyCopierApp* app) {
 #ifdef BACKLIGHT_ON
     notification_message(app->notifications, &sequence_display_backlight_enforce_auto);
 #endif
     furi_record_close(RECORD_NOTIFICATION);
 
-    view_dispatcher_remove_view(app->view_dispatcher, KeyMakerViewTextInput);
+    view_dispatcher_remove_view(app->view_dispatcher, KeyCopierViewTextInput);
     text_input_free(app->text_input);
     free(app->temp_buffer);
-    view_dispatcher_remove_view(app->view_dispatcher, KeyMakerViewAbout);
+    view_dispatcher_remove_view(app->view_dispatcher, KeyCopierViewAbout);
     widget_free(app->widget_about);
-    view_dispatcher_remove_view(app->view_dispatcher, KeyMakerViewGame);
+    view_dispatcher_remove_view(app->view_dispatcher, KeyCopierViewGame);
     with_view_model(
         app->view_game,
-        KeyMakerGameModel * model,
+        KeyCopierGameModel * model,
         {
             if(model->depth != NULL) {
                 free(model->depth);
@@ -669,9 +731,9 @@ static void key_copier_app_free(KeyMakerApp* app) {
         },
         false);
     view_free(app->view_game);
-    view_dispatcher_remove_view(app->view_dispatcher, KeyMakerViewConfigure);
+    view_dispatcher_remove_view(app->view_dispatcher, KeyCopierViewConfigure);
     variable_item_list_free(app->variable_item_list_config);
-    view_dispatcher_remove_view(app->view_dispatcher, KeyMakerViewSubmenu);
+    view_dispatcher_remove_view(app->view_dispatcher, KeyCopierViewSubmenu);
     submenu_free(app->submenu);
     view_dispatcher_free(app->view_dispatcher);
     furi_record_close(RECORD_GUI);
@@ -689,7 +751,7 @@ static void key_copier_app_free(KeyMakerApp* app) {
 int32_t main_key_copier_app(void* _p) {
     UNUSED(_p);
 
-    KeyMakerApp* app = key_copier_app_alloc();
+    KeyCopierApp* app = key_copier_app_alloc();
     view_dispatcher_run(app->view_dispatcher);
 
     key_copier_app_free(app);

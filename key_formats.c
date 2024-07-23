@@ -3,7 +3,7 @@
 // angle is in degrees
 const KeyFormat all_formats[] = {
     {
-    .format_name = "KW1",
+    .format_name = "Kwikset KW1",
     .first_pin_inch = 0.247,
     .last_pin_inch = 0.847,
     .pin_increment_inch = 0.15,
@@ -20,7 +20,7 @@ const KeyFormat all_formats[] = {
     },
 
     {
-    .format_name = "SC4",
+    .format_name = "Schlage SC4",
     .first_pin_inch = 0.231,
     .last_pin_inch = 1.012,
     .pin_increment_inch = 0.1562,
