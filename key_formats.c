@@ -16,7 +16,7 @@ const KeyFormat all_formats[] = {
     .min_depth_ind = 1,
     .max_depth_ind = 7,
     .macs = 4,
-    .clearance = 4
+    .clearance = 3
     },
 
     {
@@ -26,13 +26,13 @@ const KeyFormat all_formats[] = {
     .pin_increment_inch = 0.1562,
     .pin_num = 6,
     .pin_width_inch = 0.031,
-    .drill_angle = 100,
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make 100 degrees very ugly and unsuable
     .uncut_depth_inch = 0.335,
     .deepest_depth_inch = 0.2,
     .depth_step_inch = 0.015,
     .min_depth_ind = 0,
     .max_depth_ind = 9,
     .macs = 7,
-    .clearance = 4
+    .clearance = 8
     }
 };

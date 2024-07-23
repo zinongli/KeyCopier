@@ -14,7 +14,7 @@
 
 #define TAG "KeyMaker"
 
-#define INCHES_PER_PIXEL 0.00978
+#define INCHES_PER_px 0.00978
 
 #define FIRST_PIN_INCH 0.247
 #define LAST_PIN_INCH 0.997
@@ -257,89 +257,96 @@ static inline int max(int a, int b) {
  * @param      canvas  The canvas to draw on.
  * @param      model   The model - MyModel object.
 */
-static double inches_per_pixel = (double)INCHES_PER_PIXEL;
-int pin_half_width_pixel;
-int pin_step_pixel;
+static double inches_per_px = (double)INCHES_PER_px;
+
 static void key_copier_view_game_draw_callback(Canvas* canvas, void* model) {
     KeyMakerGameModel* my_model = (KeyMakerGameModel*)model;
     KeyFormat my_format = my_model->format;
-    static bool initialized = false;
-    if (!initialized) {
-        pin_half_width_pixel = (int)round(my_format.pin_width_inch / inches_per_pixel / 2);
-        pin_step_pixel = (int)round(my_format.pin_increment_inch / inches_per_pixel);
-        initialized = true;
-    }
-    int pin_step_pixel = (int)round(my_format.pin_increment_inch / inches_per_pixel);
-    int post_extra_x_pixel = 0;
-    int pre_extra_x_pixel = 0;
-    for (int current_pin = 1; current_pin <= my_model->total_pin; current_pin += 1) {
-        double current_center_pixel = my_format.first_pin_inch + (current_pin - 1) * my_format.pin_increment_inch;
-        int pin_center_pixel = (int)round(current_center_pixel / inches_per_pixel);
 
-        int top_contour_pixel = (int)round(63 - my_format.uncut_depth_inch / inches_per_pixel);
-        canvas_draw_line(canvas, pin_center_pixel, 25, pin_center_pixel, 50);
+    int pin_half_width_px = (int)round((my_format.pin_width_inch / inches_per_px) / 2);
+    int pin_step_px = (int)round(my_format.pin_increment_inch / inches_per_px);
+    double drill_radians = (180 - my_format.drill_angle) / 2 / 180 * (double)M_PI; // Convert angle to radians
+    double tangent = tan(drill_radians);
+
+    int post_extra_x_px = 0;
+    int pre_extra_x_px = 0;
+    for (int current_pin = 1; current_pin <= my_model->total_pin; current_pin += 1) {
+        double current_center_px = my_format.first_pin_inch + (current_pin - 1) * my_format.pin_increment_inch;
+        int pin_center_px = (int)round(current_center_px / inches_per_px);
+
+        int top_contour_px = (int)round(63 - my_format.uncut_depth_inch / inches_per_px);
+        canvas_draw_line(canvas, pin_center_px, 25, pin_center_px, 50);
         int current_depth = my_model->depth[current_pin - 1] - my_format.min_depth_ind;
-        int current_depth_pixel = (int)round(current_depth * my_format.depth_step_inch / inches_per_pixel);
-        canvas_draw_line(canvas, pin_center_pixel - pin_half_width_pixel, top_contour_pixel + current_depth_pixel, pin_center_pixel + pin_half_width_pixel, top_contour_pixel + current_depth_pixel);
+        int current_depth_px = (int)round(current_depth * my_format.depth_step_inch / inches_per_px);
+        canvas_draw_line(canvas, pin_center_px - pin_half_width_px, top_contour_px + current_depth_px, pin_center_px + pin_half_width_px, top_contour_px + current_depth_px);
         int last_depth = my_model->depth[current_pin - 2] - my_format.min_depth_ind;
         int next_depth = my_model->depth[current_pin] - my_format.min_depth_ind;        
         if(current_pin == 1){
-            canvas_draw_line(canvas, 0, top_contour_pixel, pin_center_pixel - pin_half_width_pixel - current_depth_pixel, top_contour_pixel);
+            canvas_draw_line(canvas, 0, top_contour_px, pin_center_px - pin_half_width_px - current_depth_px, top_contour_px);
             last_depth = 0;
-            pre_extra_x_pixel = max(current_depth_pixel + pin_half_width_pixel, 0);
+            pre_extra_x_px = max(current_depth_px + pin_half_width_px, 0);
         } 
         if(current_pin == my_model->total_pin) {
             next_depth = my_format.min_depth_ind;
         }
         if ((last_depth + current_depth) > my_format.clearance && current_depth != my_format.min_depth_ind) { //yes intersection  
             
-            if (current_pin != 1) {pre_extra_x_pixel = min(max(pin_step_pixel - post_extra_x_pixel,pin_half_width_pixel),pin_step_pixel - pin_half_width_pixel - 1);}
+            if (current_pin != 1) {pre_extra_x_px = min(max(pin_step_px - post_extra_x_px,pin_half_width_px),pin_step_px - pin_half_width_px);}
             canvas_draw_line(
                 canvas,
-                pin_center_pixel - pre_extra_x_pixel,
-                top_contour_pixel + max(current_depth_pixel - (pre_extra_x_pixel - pin_half_width_pixel),0),
-                pin_center_pixel - pin_half_width_pixel,
-                top_contour_pixel + current_depth_pixel
+                pin_center_px - pre_extra_x_px,
+                top_contour_px + max((int)round((current_depth_px - (pre_extra_x_px - pin_half_width_px)) * tangent),0),
+                pin_center_px - pin_half_width_px,
+                top_contour_px + (int)round(current_depth_px * tangent)
                 );
         } else {
+            int last_depth_px = (int)round(last_depth * my_format.depth_step_inch / inches_per_px);
+            int down_slope_start_x_px = pin_center_px - pin_half_width_px - current_depth_px;
             canvas_draw_line(
                 canvas,
-                pin_center_pixel - pin_half_width_pixel - current_depth_pixel,
-                top_contour_pixel,
-                pin_center_pixel - pin_half_width_pixel,
-                top_contour_pixel + current_depth_pixel
+                pin_center_px - pin_half_width_px - current_depth_px,
+                top_contour_px,
+                pin_center_px - pin_half_width_px,
+                top_contour_px + (int)round(current_depth_px * tangent)
+                );
+            canvas_draw_line(
+                canvas,
+                min(pin_center_px - pin_step_px + pin_half_width_px + last_depth_px, down_slope_start_x_px),
+                top_contour_px,
+                down_slope_start_x_px,
+                top_contour_px
                 );
         }
         if ((current_depth + next_depth) > my_format.clearance && current_depth != my_format.min_depth_ind) { //yes intersection
             double numerator = (double)current_depth;
             double denominator = (double)(current_depth + next_depth);
-            double product = (numerator / denominator) * pin_step_pixel;   
-            post_extra_x_pixel = (int)min(max(round(product),pin_half_width_pixel),pin_step_pixel - pin_half_width_pixel - 1);         
+            double product = (numerator / denominator) * pin_step_px;
+            post_extra_x_px = (int)min(max(product,pin_half_width_px),pin_step_px - pin_half_width_px);
             canvas_draw_line(
                 canvas,
-                pin_center_pixel + pin_half_width_pixel,
-                top_contour_pixel + current_depth_pixel,
-                pin_center_pixel + post_extra_x_pixel,
-                top_contour_pixel + max(current_depth_pixel - (post_extra_x_pixel - pin_half_width_pixel),0)
+                pin_center_px + pin_half_width_px,
+                top_contour_px + current_depth_px,
+                pin_center_px + post_extra_x_px,
+                top_contour_px + max(current_depth_px - (int)round((post_extra_x_px - pin_half_width_px) * tangent),0)
                 );
         } else { // no intersection
             canvas_draw_line(
                 canvas,
-                pin_center_pixel + pin_half_width_pixel,
-                top_contour_pixel + current_depth_pixel,
-                pin_center_pixel + pin_half_width_pixel + current_depth_pixel,
-                top_contour_pixel
+                pin_center_px + pin_half_width_px,
+                top_contour_px + (int)round(current_depth_px * tangent),
+                pin_center_px + pin_half_width_px + current_depth_px,
+                top_contour_px
                 );
         }
     }
 
-    int level_contour_pixel = (int)round((my_format.last_pin_inch + my_format.pin_increment_inch) / inches_per_pixel - 4);
-    canvas_draw_line(canvas, 0, 62, level_contour_pixel, 62);
-    int step_pixel = (int)round(my_format.pin_increment_inch / inches_per_pixel);
-    canvas_draw_line(canvas, level_contour_pixel, 62, level_contour_pixel+step_pixel, 62-step_pixel);
+    int level_contour_px = (int)round((my_format.last_pin_inch + my_format.pin_increment_inch) / inches_per_px - 4);
+    canvas_draw_line(canvas, 0, 62, level_contour_px, 62);
+    int step_px = (int)round(my_format.pin_increment_inch / inches_per_px);
+    canvas_draw_line(canvas, level_contour_px, 62, level_contour_px+step_px, 62-step_px);
 
-    int slc_pin_pixel = (int)round((my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch)/ inches_per_pixel);
-    canvas_draw_str(canvas, slc_pin_pixel-2, 23, "*");
+    int slc_pin_px = (int)round((my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch)/ inches_per_px);
+    canvas_draw_str(canvas, slc_pin_px-2, 23, "*");
 
     FuriString* xstr = furi_string_alloc(); 
     int buffer_size = my_model->total_pin + 1; 
@@ -473,15 +480,15 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
                     {
                         if(model->depth[model->pin_slc - 1] > model->format.min_depth_ind) {
                             if (model->pin_slc == 1) { //first pin only limited by the next one
-                                if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs)
+                                if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs - 1)
                                 model->depth[model->pin_slc - 1]--;
                             } else if (model->pin_slc == model->format.pin_num) { //last pin only limited by the previous one
-                                if (model->depth[model->pin_slc - 2] - model->depth[model->pin_slc - 1] < model->format.macs) {
+                                if (model->depth[model->pin_slc - 2] - model->depth[model->pin_slc - 1] < model->format.macs - 1) {
                                 model->depth[model->pin_slc - 1]--;
                                 }
                             } else{
-                                if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs &&
-                                model->depth[model->pin_slc - 2] - model->depth[model->pin_slc - 1] < model->format.macs) {
+                                if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs - 1 &&
+                                model->depth[model->pin_slc - 2] - model->depth[model->pin_slc - 1] < model->format.macs - 1) {
                                 model->depth[model->pin_slc - 1]--;
                                 }
                             }
@@ -499,15 +506,15 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
                     {
                         if(model->depth[model->pin_slc - 1] < model->format.max_depth_ind) {
                             if (model->pin_slc == 1) { //first pin only limited by the next one
-                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] < model->format.macs)
+                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] < model->format.macs - 1)
                                 model->depth[model->pin_slc - 1]++;
                             } else if (model->pin_slc == model->format.pin_num) { //last pin only limited by the previous one
-                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc - 2] < model->format.macs) {
+                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc - 2] < model->format.macs - 1) {
                                 model->depth[model->pin_slc - 1]++;
                                 }
                             } else{
-                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] < model->format.macs &&
-                                model->depth[model->pin_slc - 1] - model->depth[model->pin_slc - 2] < model->format.macs) {
+                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] < model->format.macs - 1 &&
+                                model->depth[model->pin_slc - 1] - model->depth[model->pin_slc - 2] < model->format.macs - 1) {
                                 model->depth[model->pin_slc - 1]++;
                                 }
                             }
