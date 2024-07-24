@@ -7,7 +7,7 @@
 - Use the up and down button to adjust the depth of the bitting. 
 ## Config
 - There are currently two key formats to choose from: Kwikset (KW1) and Schalage (SC4). 
-- The key name is reserved for future development of the file saving feature.
+- Save the key bitting pattern to a .keycopy file.
 ## About
 - Key Maker App 0.1
 - Based on Derak Jamison's Skeleton App
