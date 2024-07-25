@@ -10,7 +10,7 @@
 - Save the key bitting pattern to a .keycopy file.
 ## About
 - Key Maker App 0.1
-- Based on Derak Jamison's Skeleton App
+- Based on Derek Jamison's Skeleton App
 - Project channel: https://discord.gg/BwNar4pAQ9
 
 
