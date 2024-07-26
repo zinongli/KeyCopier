@@ -6,7 +6,7 @@
 - Use the left and right button to move around pins. 
 - Use the up and down button to adjust the depth of the bitting. 
 ## Config
-- There are currently two key formats to choose from: Kwikset (KW1) and Schalage (SC4). 
+- There are currently two key formats to choose from: Kwikset (KW1) and Schlage (SC4). 
 - Save the key bitting pattern to a .keycopy file.
 ## About
 - Key Maker App 0.1
