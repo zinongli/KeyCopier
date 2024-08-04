@@ -3,6 +3,8 @@
 
 typedef struct {
     char* format_name; 
+    char* format_short_name;
+    char* format_link;
 
     double first_pin_inch;
     double last_pin_inch;

@@ -20,16 +20,16 @@
 
 #define INCHES_PER_PX 0.00978
 
-#define FIRST_PIN_INCH 0.247
-#define LAST_PIN_INCH 0.997
+#define FIRST_PIN_INCH     0.247
+#define LAST_PIN_INCH      0.997
 #define PIN_INCREMENT_INCH 0.15
 
-#define UNCUT_DEPTH_INCH 0.329
+#define UNCUT_DEPTH_INCH   0.329
 #define DEEPEST_DEPTH_INCH 0.191
-#define DEPTH_STEP_INCH 0.023
-#define MAX_DEPTH_IND ((UNCUT_DEPTH_INCH - DEEPEST_DEPTH_INCH) / DEPTH_STEP_INCH)
-#define PIN_WIDTH_INCH 0.084
-#define PIN_NUM 6
+#define DEPTH_STEP_INCH    0.023
+#define MAX_DEPTH_IND      ((UNCUT_DEPTH_INCH - DEEPEST_DEPTH_INCH) / DEPTH_STEP_INCH)
+#define PIN_WIDTH_INCH     0.084
+#define PIN_NUM            6
 
 // Change this to BACKLIGHT_AUTO if you don't want the backlight to be continuously on.
 #define BACKLIGHT_ON 1
@@ -70,7 +70,6 @@ typedef struct {
 
     FuriTimer* timer; // Timer for redrawing the screen
 } KeyCopierApp;
-
 
 typedef struct {
     uint32_t format_index; // The index for total number of pins
@@ -178,27 +177,20 @@ static void key_copier_total_pin_change(VariableItem* item) {
     }
 }
 
-void ensure_dir_exists(Storage *storage)
-{
+void ensure_dir_exists(Storage* storage) {
     // If apps_data directory doesn't exist, create it.
-    if (!storage_dir_exists(storage, KEY_COPIER_APPS_DATA_FOLDER))
-    {
+    if(!storage_dir_exists(storage, KEY_COPIER_APPS_DATA_FOLDER)) {
         FURI_LOG_I(TAG, "Creating directory: %s", KEY_COPIER_APPS_DATA_FOLDER);
         storage_simply_mkdir(storage, KEY_COPIER_APPS_DATA_FOLDER);
-    }
-    else
-    {
+    } else {
         FURI_LOG_I(TAG, "Directory exists: %s", KEY_COPIER_APPS_DATA_FOLDER);
     }
 
     // If wiegand directory doesn't exist, create it.
-    if (!storage_dir_exists(storage, KEY_COPIER_SAVE_FOLDER))
-    {
+    if(!storage_dir_exists(storage, KEY_COPIER_SAVE_FOLDER)) {
         FURI_LOG_I(TAG, "Creating directory: %s", KEY_COPIER_SAVE_FOLDER);
         storage_simply_mkdir(storage, KEY_COPIER_SAVE_FOLDER);
-    }
-    else
-    {
+    } else {
         FURI_LOG_I(TAG, "Directory exists: %s", KEY_COPIER_SAVE_FOLDER);
     }
 }
@@ -210,7 +202,7 @@ void ensure_dir_exists(Storage *storage)
 */
 static const char* key_name_config_label = "Save Key";
 static const char* key_name_entry_text = "Enter name";
-static const char* key_name_default_value = "Key 1";
+static const char* key_name_default_value = "";
 static void key_copier_key_name_text_updated(void* context) {
     KeyCopierApp* app = (KeyCopierApp*)context;
     KeyCopierGameModel* model = view_get_model(app->view_game);
@@ -224,40 +216,45 @@ static void key_copier_key_name_text_updated(void* context) {
                 app->key_name_item, furi_string_get_cstr(model->key_name_str));
         },
         redraw);
-    FuriString *buffer = furi_string_alloc();
-    FuriString *file_path = furi_string_alloc();
+    FuriString* buffer = furi_string_alloc();
+    FuriString* file_path = furi_string_alloc();
     furi_string_printf(
-        file_path, "%s/%s%s", KEY_COPIER_SAVE_FOLDER, furi_string_get_cstr(model->key_name_str), KEY_COPIER_SAVE_EXTENSION);
+        file_path,
+        "%s/%s%s",
+        KEY_COPIER_SAVE_FOLDER,
+        furi_string_get_cstr(model->key_name_str),
+        KEY_COPIER_SAVE_EXTENSION);
 
-    Storage *storage = furi_record_open(RECORD_STORAGE);
+    Storage* storage = furi_record_open(RECORD_STORAGE);
     ensure_dir_exists(storage);
-    File *data_file = storage_file_alloc(storage);
-    if (storage_file_open(
-            data_file, furi_string_get_cstr(file_path), FSAM_WRITE, FSOM_OPEN_ALWAYS))
-    {
+    File* data_file = storage_file_alloc(storage);
+    if(storage_file_open(
+           data_file, furi_string_get_cstr(file_path), FSAM_WRITE, FSOM_OPEN_ALWAYS)) {
         furi_string_printf(buffer, "Filetype: Flipper Key Copier File\n");
         storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
         furi_string_printf(buffer, "Version: 1.0\n");
         storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
         furi_string_printf(buffer, "Key Format: %s\n", model->format.format_name);
         storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
-        furi_string_printf(buffer, "Pin Number: %d\n", model->format.pin_num);
+        furi_string_printf(buffer, "Link: %s\n", model->format.format_link);
+        storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
+        furi_string_printf(buffer, "Number of Pins: %d\n", model->format.pin_num);
         storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
         furi_string_printf(buffer, "Maximum Adjacent Cut Specification: %d\n", model->format.macs);
         storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
-        furi_string_printf(buffer, "Bitting Pattern: ");
-        for (int i = 0; i < model->format.pin_num; i++)
-        {
-            furi_string_cat_printf(
-                buffer,
-                "%d ",
-                model->depth[i]);
+        furi_string_printf(buffer, "\nBitting Pattern:\n");
+        for(int i = 0; i < model->format.pin_num; i++) {
+            if(i < model->format.pin_num - 1) {
+                furi_string_cat_printf(buffer, "%d-", model->depth[i]);
+            } else {
+                furi_string_cat_printf(buffer, "%d", model->depth[i]);
+            }
         }
         furi_string_push_back(buffer, '\n');
         storage_file_write(data_file, furi_string_get_cstr(buffer), furi_string_size(buffer));
 
         storage_file_close(data_file);
-    view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewConfigure);
+        view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewConfigure);
     }
 }
 /**
@@ -315,54 +312,75 @@ static inline int min(int a, int b) {
 static inline int max(int a, int b) {
     return (a > b) ? a : b;
 }
+
+static double inches_per_px = (double)INCHES_PER_PX;
+
 /**
  * @brief      Callback for drawing the game screen.
  * @details    This function is called when the screen needs to be redrawn, like when the model gets updated.
  * @param      canvas  The canvas to draw on.
  * @param      model   The model - MyModel object.
 */
-static double inches_per_px = (double)INCHES_PER_PX;
-
 static void key_copier_view_game_draw_callback(Canvas* canvas, void* model) {
     KeyCopierGameModel* my_model = (KeyCopierGameModel*)model;
     KeyFormat my_format = my_model->format;
 
     int pin_half_width_px = (int)round((my_format.pin_width_inch / inches_per_px) / 2);
     int pin_step_px = (int)round(my_format.pin_increment_inch / inches_per_px);
-    double drill_radians = (180 - my_format.drill_angle) / 2 / 180 * (double)M_PI; // Convert angle to radians
+    double drill_radians =
+        (180 - my_format.drill_angle) / 2 / 180 * (double)M_PI; // Convert angle to radians
     double tangent = tan(drill_radians);
 
     int post_extra_x_px = 0;
     int pre_extra_x_px = 0;
-    for (int current_pin = 1; current_pin <= my_model->total_pin; current_pin += 1) {
-        double current_center_px = my_format.first_pin_inch + (current_pin - 1) * my_format.pin_increment_inch;
+    for(int current_pin = 1; current_pin <= my_model->total_pin; current_pin += 1) {
+        double current_center_px =
+            my_format.first_pin_inch + (current_pin - 1) * my_format.pin_increment_inch;
         int pin_center_px = (int)round(current_center_px / inches_per_px);
 
         int top_contour_px = (int)round(63 - my_format.uncut_depth_inch / inches_per_px);
         canvas_draw_line(canvas, pin_center_px, 25, pin_center_px, 50);
         int current_depth = my_model->depth[current_pin - 1] - my_format.min_depth_ind;
-        int current_depth_px = (int)round(current_depth * my_format.depth_step_inch / inches_per_px);
-        canvas_draw_line(canvas, pin_center_px - pin_half_width_px, top_contour_px + current_depth_px, pin_center_px + pin_half_width_px, top_contour_px + current_depth_px);
+        int current_depth_px =
+            (int)round(current_depth * my_format.depth_step_inch / inches_per_px);
+        canvas_draw_line(
+            canvas,
+            pin_center_px - pin_half_width_px,
+            top_contour_px + current_depth_px,
+            pin_center_px + pin_half_width_px,
+            top_contour_px + current_depth_px);
         int last_depth = my_model->depth[current_pin - 2] - my_format.min_depth_ind;
-        int next_depth = my_model->depth[current_pin] - my_format.min_depth_ind;        
-        if(current_pin == 1){
-            canvas_draw_line(canvas, 0, top_contour_px, pin_center_px - pin_half_width_px - current_depth_px, top_contour_px);
+        int next_depth = my_model->depth[current_pin] - my_format.min_depth_ind;
+        if(current_pin == 1) {
+            canvas_draw_line(
+                canvas,
+                0,
+                top_contour_px,
+                pin_center_px - pin_half_width_px - current_depth_px,
+                top_contour_px);
             last_depth = 0;
             pre_extra_x_px = max(current_depth_px + pin_half_width_px, 0);
-        } 
-        if(current_pin == my_model->total_pin) {
-            next_depth = my_format.min_depth_ind;
         }
-        if ((last_depth + current_depth) > my_format.clearance && current_depth != my_format.min_depth_ind) { //yes intersection  
-            
-            if (current_pin != 1) {pre_extra_x_px = min(max(pin_step_px - post_extra_x_px,pin_half_width_px),pin_step_px - pin_half_width_px);}
+        if(current_pin == my_model->total_pin) {
+            next_depth = 0;
+        }
+        if((last_depth + current_depth) > my_format.clearance &&
+           current_depth != 0) { //yes intersection
+
+            if(current_pin != 1) {
+                pre_extra_x_px =
+                    min(max(pin_step_px - post_extra_x_px, pin_half_width_px),
+                        pin_step_px - pin_half_width_px);
+            }
             canvas_draw_line(
                 canvas,
                 pin_center_px - pre_extra_x_px,
-                top_contour_px + max((int)round((current_depth_px - (pre_extra_x_px - pin_half_width_px)) * tangent),0),
+                top_contour_px +
+                    max((int)round(
+                            (current_depth_px - (pre_extra_x_px - pin_half_width_px)) * tangent),
+                        0),
                 pin_center_px - pin_half_width_px,
-                top_contour_px + (int)round(current_depth_px * tangent)
-                );
+                top_contour_px + (int)round(current_depth_px * tangent));
         } else {
             int last_depth_px = (int)round(last_depth * my_format.depth_step_inch / inches_per_px);
             int down_slope_start_x_px = pin_center_px - pin_half_width_px - current_depth_px;
@@ -371,56 +389,61 @@ static void key_copier_view_game_draw_callback(Canvas* canvas, void* model) {
                 pin_center_px - pin_half_width_px - current_depth_px,
                 top_contour_px,
                 pin_center_px - pin_half_width_px,
-                top_contour_px + (int)round(current_depth_px * tangent)
-                );
+                top_contour_px + (int)round(current_depth_px * tangent));
             canvas_draw_line(
                 canvas,
-                min(pin_center_px - pin_step_px + pin_half_width_px + last_depth_px, down_slope_start_x_px),
+                min(pin_center_px - pin_step_px + pin_half_width_px + last_depth_px,
+                    down_slope_start_x_px),
                 top_contour_px,
                 down_slope_start_x_px,
-                top_contour_px
-                );
+                top_contour_px);
         }
-        if ((current_depth + next_depth) > my_format.clearance && current_depth != my_format.min_depth_ind) { //yes intersection
+        if((current_depth + next_depth) > my_format.clearance &&
+           current_depth != 0) { //yes intersection
             double numerator = (double)current_depth;
             double denominator = (double)(current_depth + next_depth);
             double product = (numerator / denominator) * pin_step_px;
-            post_extra_x_px = (int)min(max(product,pin_half_width_px),pin_step_px - pin_half_width_px);
+            post_extra_x_px =
+                (int)min(max(product, pin_half_width_px), pin_step_px - pin_half_width_px);
             canvas_draw_line(
                 canvas,
                 pin_center_px + pin_half_width_px,
                 top_contour_px + current_depth_px,
                 pin_center_px + post_extra_x_px,
-                top_contour_px + max(current_depth_px - (int)round((post_extra_x_px - pin_half_width_px) * tangent),0)
-                );
+                top_contour_px +
+                    max(current_depth_px -
+                            (int)round((post_extra_x_px - pin_half_width_px) * tangent),
+                        0));
         } else { // no intersection
             canvas_draw_line(
                 canvas,
                 pin_center_px + pin_half_width_px,
                 top_contour_px + (int)round(current_depth_px * tangent),
                 pin_center_px + pin_half_width_px + current_depth_px,
-                top_contour_px
-                );
+                top_contour_px);
         }
     }
 
-    int level_contour_px = (int)round((my_format.last_pin_inch + my_format.pin_increment_inch) / inches_per_px - 4);
+    int level_contour_px =
+        (int)round((my_format.last_pin_inch + my_format.pin_increment_inch) / inches_per_px - 4);
     canvas_draw_line(canvas, 0, 62, level_contour_px, 62);
     int step_px = (int)round(my_format.pin_increment_inch / inches_per_px);
-    canvas_draw_line(canvas, level_contour_px, 62, level_contour_px+step_px, 62-step_px);
+    canvas_draw_line(canvas, level_contour_px, 62, level_contour_px + step_px, 62 - step_px);
 
-    int slc_pin_px = (int)round((my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch)/ inches_per_px);
-    canvas_draw_str(canvas, slc_pin_px-2, 23, "*");
+    int slc_pin_px = (int)round(
+        (my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch) /
+        inches_per_px);
+    canvas_draw_str(canvas, slc_pin_px - 2, 23, "*");
 
-    FuriString* xstr = furi_string_alloc(); 
-    int buffer_size = my_model->total_pin + 1; 
+    FuriString* xstr = furi_string_alloc();
+    int buffer_size = my_model->total_pin + 1;
     char depth_str[buffer_size];
     depth_str[0] = '\0'; // Initialize the string
     // Manual string concatenation
     char* pos = depth_str;
-    for (int i = 0; i < my_model->total_pin; i++) {
+    for(int i = 0; i < my_model->total_pin; i++) {
         int written = snprintf(pos, buffer_size - (pos - depth_str), "%u", my_model->depth[i]);
-        if (written < 0 || written >= buffer_size - (pos - depth_str)) {
+        if(written < 0 || written >= buffer_size - (pos - depth_str)) {
             // Handle error
             break;
         }
@@ -428,7 +451,10 @@ static void key_copier_view_game_draw_callback(Canvas* canvas, void* model) {
     }
     furi_string_printf(xstr, "bitting: %s", depth_str);
     canvas_draw_str(canvas, 0, 10, furi_string_get_cstr(xstr));
-    
+
+    furi_string_printf(xstr, "%s", my_format.format_short_name);
+    canvas_draw_str(canvas, 110, 10, furi_string_get_cstr(xstr));
+
     //furi_string_printf(xstr, "Num of Pins: %s", format_names[my_model->format_index]);
     //canvas_draw_str(canvas, 44, 24, furi_string_get_cstr(xstr));
     furi_string_free(xstr);
@@ -489,7 +515,8 @@ static bool key_copier_view_game_custom_event_callback(uint32_t event, void* con
             return true;
         }
     case KeyCopierEventIdOkPressed:
-        // Process the OK button.  We play a tone based on the x coordinate.
+        // Process the OK button.  We go to the saving scene.
+        view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewTextInput);
         return true;
     default:
         return false;
@@ -507,89 +534,105 @@ static bool key_copier_view_game_input_callback(InputEvent* event, void* context
     KeyCopierApp* app = (KeyCopierApp*)context;
     if(event->type == InputTypeShort) {
         switch(event->key) {
-            case InputKeyLeft: {
-                // Left button clicked, reduce x coordinate.
-                bool redraw = true;
-                with_view_model(
-                    app->view_game,
-                    KeyCopierGameModel * model,
-                    {
-                        if(model->pin_slc > 1) {
-                            model->pin_slc--;
-                        }
-                    },
-                    redraw);
-                break;
-            }
-            case InputKeyRight: {
-                // Left button clicked, reduce x coordinate.
-                bool redraw = true;
-                with_view_model(
-                    app->view_game,
-                    KeyCopierGameModel * model,
-                    {
-                        if(model->pin_slc < model->format.pin_num) {
-                            model->pin_slc++;
-                        }
-                    },
-                    redraw);
-                break;
-            }
-            case InputKeyUp: {
-                // Left button clicked, reduce x coordinate.
-                bool redraw = true;
-                with_view_model(
-                    app->view_game,
-                    KeyCopierGameModel * model,
-                    {
-                        if(model->depth[model->pin_slc - 1] > model->format.min_depth_ind) {
-                            if (model->pin_slc == 1) { //first pin only limited by the next one
-                                if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs - 1)
+        case InputKeyLeft: {
+            // Left button clicked, reduce x coordinate.
+            bool redraw = true;
+            with_view_model(
+                app->view_game,
+                KeyCopierGameModel * model,
+                {
+                    if(model->pin_slc > 1) {
+                        model->pin_slc--;
+                    }
+                },
+                redraw);
+            break;
+        }
+        case InputKeyRight: {
+            // Left button clicked, reduce x coordinate.
+            bool redraw = true;
+            with_view_model(
+                app->view_game,
+                KeyCopierGameModel * model,
+                {
+                    if(model->pin_slc < model->format.pin_num) {
+                        model->pin_slc++;
+                    }
+                },
+                redraw);
+            break;
+        }
+        case InputKeyUp: {
+            // Left button clicked, reduce x coordinate.
+            bool redraw = true;
+            with_view_model(
+                app->view_game,
+                KeyCopierGameModel * model,
+                {
+                    if(model->depth[model->pin_slc - 1] > model->format.min_depth_ind) {
+                        if(model->pin_slc == 1) { //first pin only limited by the next one
+                            if(model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] <
+                               model->format.macs)
                                 model->depth[model->pin_slc - 1]--;
-                            } else if (model->pin_slc == model->format.pin_num) { //last pin only limited by the previous one
-                                if (model->depth[model->pin_slc - 2] - model->depth[model->pin_slc - 1] < model->format.macs - 1) {
+                        } else if(
+                            model->pin_slc ==
+                            model->format.pin_num) { //last pin only limited by the previous one
+                            if(model->depth[model->pin_slc - 2] -
+                                   model->depth[model->pin_slc - 1] <
+                               model->format.macs) {
                                 model->depth[model->pin_slc - 1]--;
-                                }
-                            } else{
-                                if (model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] < model->format.macs - 1 &&
-                                model->depth[model->pin_slc - 2] - model->depth[model->pin_slc - 1] < model->format.macs - 1) {
+                            }
+                        } else {
+                            if(model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] <
+                                   model->format.macs &&
+                               model->depth[model->pin_slc - 2] -
+                                       model->depth[model->pin_slc - 1] <
+                                   model->format.macs) {
                                 model->depth[model->pin_slc - 1]--;
-                                }
                             }
                         }
-                    },
-                    redraw);
-                break;
-            }
-            case InputKeyDown: {
-                // Right button clicked, increase x coordinate.
-                bool redraw = true;
-                with_view_model(
-                    app->view_game,
-                    KeyCopierGameModel * model,
-                    {
-                        if(model->depth[model->pin_slc - 1] < model->format.max_depth_ind) {
-                            if (model->pin_slc == 1) { //first pin only limited by the next one
-                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] < model->format.macs - 1)
+                    }
+                },
+                redraw);
+            break;
+        }
+        case InputKeyDown: {
+            // Right button clicked, increase x coordinate.
+            bool redraw = true;
+            with_view_model(
+                app->view_game,
+                KeyCopierGameModel * model,
+                {
+                    if(model->depth[model->pin_slc - 1] < model->format.max_depth_ind) {
+                        if(model->pin_slc == 1) { //first pin only limited by the next one
+                            if(model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] <
+                               model->format.macs)
                                 model->depth[model->pin_slc - 1]++;
-                            } else if (model->pin_slc == model->format.pin_num) { //last pin only limited by the previous one
-                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc - 2] < model->format.macs - 1) {
+                        } else if(
+                            model->pin_slc ==
+                            model->format.pin_num) { //last pin only limited by the previous one
+                            if(model->depth[model->pin_slc - 1] -
+                                   model->depth[model->pin_slc - 2] <
+                               model->format.macs) {
                                 model->depth[model->pin_slc - 1]++;
-                                }
-                            } else{
-                                if (model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] < model->format.macs - 1 &&
-                                model->depth[model->pin_slc - 1] - model->depth[model->pin_slc - 2] < model->format.macs - 1) {
+                            }
+                        } else {
+                            if(model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] <
+                                   model->format.macs &&
+                               model->depth[model->pin_slc - 1] -
+                                       model->depth[model->pin_slc - 2] <
+                                   model->format.macs) {
                                 model->depth[model->pin_slc - 1]++;
-                                }
                             }
                         }
-                    },
-                    redraw);
-                break;
-            }
-            default:
-                // Handle other keys or do nothing
-                break;
+                    }
+                },
+                redraw);
+            break;
+        }
+        default:
+            // Handle other keys or do nothing
+            break;
         }
     } else if(event->key == InputKeyOk) {
         // We choose to send a custom event when user presses OK button.  key_copier_custom_event_callback will
@@ -624,7 +667,8 @@ static KeyCopierApp* key_copier_app_alloc() {
         app->submenu, "Config", KeyCopierSubmenuIndexConfigure, key_copier_submenu_callback, app);
     submenu_add_item(
         app->submenu, "About", KeyCopierSubmenuIndexAbout, key_copier_submenu_callback, app);
-    view_set_previous_callback(submenu_get_view(app->submenu), key_copier_navigation_exit_callback);
+    view_set_previous_callback(
+        submenu_get_view(app->submenu), key_copier_navigation_exit_callback);
     view_dispatcher_add_view(
         app->view_dispatcher, KeyCopierViewSubmenu, submenu_get_view(app->submenu));
     view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewSubmenu);
@@ -643,13 +687,12 @@ static KeyCopierApp* key_copier_app_alloc() {
         COUNT_OF(format_names),
         key_copier_total_pin_change,
         app);
-        
+
     FuriString* key_name_str = furi_string_alloc();
     furi_string_set_str(key_name_str, key_name_default_value);
     app->key_name_item = variable_item_list_add(
         app->variable_item_list_config, key_name_config_label, 1, NULL, NULL);
-    variable_item_set_current_value_text(
-        app->key_name_item, furi_string_get_cstr(key_name_str));
+    variable_item_set_current_value_text(app->key_name_item, furi_string_get_cstr(key_name_str));
     variable_item_list_set_enter_callback(
         app->variable_item_list_config, key_copier_setting_item_clicked, app);
 
@@ -679,7 +722,6 @@ static KeyCopierApp* key_copier_app_alloc() {
     variable_item_set_current_value_index(item, model->format_index);
     variable_item_set_current_value_text(item, format_names[model->format_index]);
 
-
     view_dispatcher_add_view(app->view_dispatcher, KeyCopierViewGame, app->view_game);
 
     app->widget_about = widget_alloc();
@@ -689,7 +731,7 @@ static KeyCopierApp* key_copier_app_alloc() {
         0,
         128,
         64,
-        "Key Maker App 0.1\nGithub: https://github.com/zinongli/KeyCopier \nBased on Derak Jamison's \nSkeleton App\nProject channel: \nhttps://discord.gg/BwNar4pAQ9");
+        "Key Maker App 0.3\n\nTo measure your key:\n\n1. Place it on top of the screen.\n\n2. Use the horizontal lines to align your key.\n\n3. Adjust each pin's bitting depth until they match.\n\n4. Save the bitting pattern and key format by pressing the OK button or in the Config menu.\n\nGithub: github.com/zinongli/KeyCopier \n\nSpecial thanks to Derek Jamison's Skeleton App Template.");
     view_set_previous_callback(
         widget_get_view(app->widget_about), key_copier_navigation_submenu_callback);
     view_dispatcher_add_view(
