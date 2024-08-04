@@ -15,21 +15,11 @@
 #include "key_copier.h"
 #include <applications/services/storage/storage.h>
 #include <stdbool.h>
+#include <math.h>
 
 #define TAG "KeyCopier"
 
 #define INCHES_PER_PX 0.00978
-
-#define FIRST_PIN_INCH     0.247
-#define LAST_PIN_INCH      0.997
-#define PIN_INCREMENT_INCH 0.15
-
-#define UNCUT_DEPTH_INCH   0.329
-#define DEEPEST_DEPTH_INCH 0.191
-#define DEPTH_STEP_INCH    0.023
-#define MAX_DEPTH_IND      ((UNCUT_DEPTH_INCH - DEEPEST_DEPTH_INCH) / DEPTH_STEP_INCH)
-#define PIN_WIDTH_INCH     0.084
-#define PIN_NUM            6
 
 // Change this to BACKLIGHT_AUTO if you don't want the backlight to be continuously on.
 #define BACKLIGHT_ON 1
