@@ -1,6 +1,8 @@
 #ifndef KEY_FORMATS_H
 #define KEY_FORMATS_H
 
+#define FORMAT_NUM 2
+
 typedef struct {
     char* format_name; 
     char* format_short_name;
@@ -23,6 +25,6 @@ typedef struct {
     int clearance;
 } KeyFormat;
 
-extern const KeyFormat all_formats[];
+extern const KeyFormat all_formats[FORMAT_NUM];
 
 #endif // KEY_FORMATS_H
