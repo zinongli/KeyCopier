@@ -12,7 +12,7 @@ This application has three submenu items:
 * About
 - Key Maker App 0.1
 - Based on Derek Jamison's Skeleton App
-- Project channel: https://discord.gg/BwNar4pAQ9
+- [Project channel](https://discord.com/channels/1112390971250974782/1264067969634402356)
 
 
 
