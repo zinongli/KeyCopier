@@ -4,8 +4,8 @@
 #define FORMAT_NUM 2
 
 typedef struct {
-    char* format_name; 
-    char* format_short_name;
+    char* manufacturer; 
+    char* format_name;
     char* format_link;
 
     double first_pin_inch;
@@ -14,6 +14,7 @@ typedef struct {
     int pin_num;
     double pin_width_inch;
     double drill_angle;
+    double elbow_inch;
 
     double uncut_depth_inch;
     double deepest_depth_inch;

@@ -147,38 +147,38 @@ static void key_copier_submenu_callback(void* context, uint32_t index) {
     }
 }
 
-char* format_names[COUNT_OF(all_formats)];
-void initialize_format_names(char** format_names) {
-    // Populate the format_names array
+char* manufacturers[COUNT_OF(all_formats)];
+void initialize_manufacturers(char** manufacturers) {
+    // Populate the manufacturers array
     for(size_t i = 0; i < COUNT_OF(all_formats); i++) {
-        format_names[i] = all_formats[i].format_name;
+        manufacturers[i] = all_formats[i].manufacturer;
     }
 }
 
-static const char* format_config_label = "Key Format";
 static void key_copier_format_change(VariableItem* item) {
     KeyCopierApp* app = variable_item_get_context(item);
     KeyCopierModel* model = view_get_model(app->view_measure);
     if(model->data_loaded) {
         variable_item_set_current_value_index(item, model->format_index);
-    } else {
-        uint8_t format_index = variable_item_get_current_value_index(item);
+    }
+    uint8_t format_index = variable_item_get_current_value_index(item);
+    if(format_index != model->format_index) {
         model->format_index = format_index;
         model->format = all_formats[format_index];
+        if(model->depth != NULL) {
+            free(model->depth);
+        }
+        model->depth = (uint8_t*)malloc((model->format.pin_num + 1) * sizeof(uint8_t));
+        for(uint8_t i = 0; i <= model->format.pin_num; i++) {
+            model->depth[i] = model->format.min_depth_ind;
+        }
+        model->pin_slc = 1;
     }
     model->data_loaded = false;
     variable_item_set_current_value_text(item, model->format.format_name);
-
     model->format = all_formats[model->format_index];
-    if(model->depth != NULL) {
-        free(model->depth);
-    }
-    model->depth = (uint8_t*)malloc((model->format.pin_num + 1) * sizeof(uint8_t));
-    for(uint8_t i = 0; i <= model->format.pin_num; i++) {
-        model->depth[i] = model->format.min_depth_ind;
-    }
 }
-
+static const char* format_config_label = "Key Format";
 static void key_copier_config_enter_callback(void* context) {
     KeyCopierApp* app = (KeyCopierApp*)context;
     KeyCopierModel* my_model = view_get_model(app->view_measure);
@@ -201,11 +201,6 @@ static void key_copier_config_enter_callback(void* context) {
     view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewConfigure_i); // recreate it
 }
 
-/**
- * Our 2nd sample setting is a text field.  When the user clicks OK on the configuration 
- * setting we use a text input screen to allow the user to enter a name.  This function is
- * called when the user clicks OK on the text input screen.
-*/
 static const char* key_name_entry_text = "Enter name";
 static void key_copier_file_saver(void* context) {
     KeyCopierApp* app = (KeyCopierApp*)context;
@@ -238,10 +233,13 @@ static void key_copier_file_saver(void* context) {
         if(!flipper_format_write_header_cstr(flipper_format, "Flipper Key Copier File", version))
             break;
         if(!flipper_format_write_string_cstr(
+               flipper_format, "Manufacturer", model->format.manufacturer))
+            break;
+        if(!flipper_format_write_string_cstr(
                flipper_format, "Format Name", model->format.format_name))
             break;
         if(!flipper_format_write_string_cstr(
-               flipper_format, "Format Short Name", model->format.format_short_name))
+               flipper_format, "Data Sheet", model->format.format_link))
             break;
         if(!flipper_format_write_uint32(flipper_format, "Number of Pins", &pin_num_buffer, 1))
             break;
@@ -306,7 +304,7 @@ static void key_copier_view_save_callback(void* context) {
     view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewTextInput);
 }
 
-static void t5577_writer_view_load_callback(void* context) {
+static void key_copier_view_load_callback(void* context) {
     KeyCopierApp* app = (KeyCopierApp*)context;
     KeyCopierModel* model = view_get_model(app->view_measure);
     DialogsFileBrowserOptions browser_options;
@@ -352,15 +350,16 @@ static void t5577_writer_view_load_callback(void* context) {
 */
 static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     static double inches_per_px = (double)INCHES_PER_PX;
+    canvas_set_bitmap_mode(canvas, true);
     KeyCopierModel* my_model = (KeyCopierModel*)model;
     KeyFormat my_format = my_model->format;
-
+    FuriString* buffer = furi_string_alloc();
     int pin_half_width_px = (int)round((my_format.pin_width_inch / inches_per_px) / 2);
     int pin_step_px = (int)round(my_format.pin_increment_inch / inches_per_px);
     double drill_radians =
         (180 - my_format.drill_angle) / 2 / 180 * (double)M_PI; // Convert angle to radians
     double tangent = tan(drill_radians);
-
+    int top_contour_px = (int)round(63 - my_format.uncut_depth_inch / inches_per_px);
     int post_extra_x_px = 0;
     int pre_extra_x_px = 0;
     for(int current_pin = 1; current_pin <= my_model->format.pin_num; current_pin += 1) {
@@ -368,8 +367,21 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
             my_format.first_pin_inch + (current_pin - 1) * my_format.pin_increment_inch;
         int pin_center_px = (int)round(current_center_px / inches_per_px);
 
-        int top_contour_px = (int)round(63 - my_format.uncut_depth_inch / inches_per_px);
-        canvas_draw_line(canvas, pin_center_px, 25, pin_center_px, 50);
+        furi_string_printf(buffer, "%d", my_model->depth[current_pin - 1]);
+        canvas_draw_str_aligned(
+            canvas,
+            pin_center_px,
+            top_contour_px - 12,
+            AlignCenter,
+            AlignCenter,
+            furi_string_get_cstr(buffer));
+
+        canvas_draw_line(
+            canvas,
+            pin_center_px,
+            top_contour_px - 5,
+            pin_center_px,
+            top_contour_px); // the vertical line to indicate pin center
         int current_depth = my_model->depth[current_pin - 1] - my_format.min_depth_ind;
         int current_depth_px =
             (int)round(current_depth * my_format.depth_step_inch / inches_per_px);
@@ -378,7 +390,7 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
             pin_center_px - pin_half_width_px,
             top_contour_px + current_depth_px,
             pin_center_px + pin_half_width_px,
-            top_contour_px + current_depth_px);
+            top_contour_px + current_depth_px); // draw pin width horizontal line
         int last_depth = my_model->depth[current_pin - 2] - my_format.min_depth_ind;
         int next_depth = my_model->depth[current_pin] - my_format.min_depth_ind;
         if(current_pin == 1) {
@@ -394,8 +406,7 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
         if(current_pin == my_model->format.pin_num) {
             next_depth = 0;
         }
-        if((last_depth + current_depth) > my_format.clearance &&
-           current_depth != 0) { //yes intersection
+        if((last_depth + current_depth) > my_format.clearance) { //yes intersection
 
             if(current_pin != 1) {
                 pre_extra_x_px =
@@ -428,8 +439,7 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
                 down_slope_start_x_px,
                 top_contour_px);
         }
-        if((current_depth + next_depth) > my_format.clearance &&
-           current_depth != 0) { //yes intersection
+        if((current_depth + next_depth) > my_format.clearance) { //yes intersection
             double numerator = (double)current_depth;
             double denominator = (double)(current_depth + next_depth);
             double product = (numerator / denominator) * pin_step_px;
@@ -455,37 +465,19 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     }
 
     int level_contour_px =
-        (int)round((my_format.last_pin_inch + my_format.pin_increment_inch) / inches_per_px - 4);
+        (int)round((my_format.last_pin_inch + my_format.elbow_inch) / inches_per_px);
+    int elbow_px = (int)round(my_format.elbow_inch / inches_per_px);
     canvas_draw_line(canvas, 0, 62, level_contour_px, 62);
+    canvas_draw_line(canvas, level_contour_px, 62, level_contour_px + elbow_px, 62 - elbow_px);
 
     int slc_pin_px = (int)round(
         (my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch) /
         inches_per_px);
-    canvas_draw_str(canvas, slc_pin_px - 2, 23, "*");
+    canvas_draw_icon(canvas, slc_pin_px - 2, top_contour_px - 25, &I_arrow_down);
 
-    FuriString* xstr = furi_string_alloc();
-    int buffer_size = my_model->format.pin_num + 1;
-    char depth_str[buffer_size];
-    depth_str[0] = '\0'; // Initialize the string
-    // Manual string concatenation
-    char* pos = depth_str;
-    for(int i = 0; i < my_model->format.pin_num; i++) {
-        int written = snprintf(pos, buffer_size - (pos - depth_str), "%u", my_model->depth[i]);
-        if(written < 0 || written >= buffer_size - (pos - depth_str)) {
-            // Handle error
-            break;
-        }
-        pos += written;
-    }
-    furi_string_printf(xstr, "bitting: %s", depth_str);
-    canvas_draw_str(canvas, 0, 10, furi_string_get_cstr(xstr));
-
-    furi_string_printf(xstr, "%s", my_format.format_short_name);
-    canvas_draw_str(canvas, 110, 10, furi_string_get_cstr(xstr));
-
-    //furi_string_printf(xstr, "Num of Pins: %s", format_names[my_model->format_index]);
-    //canvas_draw_str(canvas, 44, 24, furi_string_get_cstr(xstr));
-    furi_string_free(xstr);
+    furi_string_printf(buffer, "%s", my_format.format_name);
+    canvas_draw_str(canvas, 110, 10, furi_string_get_cstr(buffer));
+    furi_string_free(buffer);
 }
 
 /**
@@ -661,7 +653,7 @@ static KeyCopierApp* key_copier_app_alloc() {
     view_set_previous_callback(app->view_config_e, key_copier_navigation_submenu_callback);
     view_set_enter_callback(app->view_config_e, key_copier_config_enter_callback);
     view_dispatcher_add_view(app->view_dispatcher, KeyCopierViewConfigure_e, app->view_config_e);
-    
+
     View* view_buffer = view_alloc();
     view_dispatcher_add_view(app->view_dispatcher, KeyCopierViewConfigure_i, view_buffer);
 
@@ -673,7 +665,7 @@ static KeyCopierApp* key_copier_app_alloc() {
 
     app->view_load = view_alloc();
     view_set_context(app->view_load, app);
-    view_set_enter_callback(app->view_load, t5577_writer_view_load_callback);
+    view_set_enter_callback(app->view_load, key_copier_view_load_callback);
     view_set_previous_callback(app->view_load, key_copier_navigation_submenu_callback);
     view_dispatcher_add_view(app->view_dispatcher, KeyCopierViewLoad, app->view_load);
 
@@ -684,7 +676,7 @@ static KeyCopierApp* key_copier_app_alloc() {
         0,
         128,
         64,
-        "Key Maker App 0.3\n\nTo measure your key:\n\n1. Place it on top of the screen.\n\n2. Use the horizontal lines to align your key.\n\n3. Adjust each pin's bitting depth until they match. It's easier if you close one eye.\n\n4. Save the bitting pattern and key format by pressing the OK button or in the Config menu.\n\nGithub: github.com/zinongli/KeyCopier \n\nSpecial thanks to Derek Jamison's Skeleton App Template.");
+        "Key Maker App 1.0\nAuthor: @Torron\n\nTo measure your key:\n\n1. Place it on top of the screen.\n\n2. Use the contour to align your key.\n\n3. Adjust each pin's depth until they match. It's easier if you use one eye.\n\nGithub: github.com/zinongli/KeyCopier \n\nSpecial thanks to Derek Jamison's Skeleton App Template.");
     view_set_previous_callback(
         widget_get_view(app->widget_about), key_copier_navigation_submenu_callback);
     view_dispatcher_add_view(
