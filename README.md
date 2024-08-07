@@ -1,11 +1,6 @@
 # Key Copier App
 A Flipper Zero app for measuring key bitting patterns.
 
-![kw1](https://github.com/user-attachments/assets/7f7984da-dd80-49d4-8dad-10a756082c89)
-![config](https://github.com/user-attachments/assets/26a51767-72c2-402f-aaa1-1deb63b8a788)
-![main_menu](https://github.com/user-attachments/assets/8ead9c49-3ffb-4353-98d0-a1ceacc1bd40)
-![load](https://github.com/user-attachments/assets/ac8a8230-092e-4fed-8775-c0a9a1ea3d46)
-
 ## Instruction
 To measure your key: 
 1. Place it on top of the screen.
