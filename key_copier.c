@@ -19,12 +19,8 @@
 #include "key_copier.h"
 #define TAG "KeyCopier"
 
-#define INCHES_PER_PX 0.00978
-
-// Change this to BACKLIGHT_AUTO if you don't want the backlight to be continuously on.
 #define BACKLIGHT_ON 1
 
-// Our application menu has 3 items.  You can add more items if you want.
 typedef enum {
     KeyCopierSubmenuIndexMeasure,
     KeyCopierSubmenuIndexConfigure,
@@ -33,46 +29,40 @@ typedef enum {
     KeyCopierSubmenuIndexAbout,
 } KeyCopierSubmenuIndex;
 
-// Each view is a screen we show the user.
 typedef enum {
-    KeyCopierViewSubmenu, // The menu when the app starts
-    KeyCopierViewTextInput, // Input for configuring text settings
-    KeyCopierViewConfigure_i, // The configuration screen
-    KeyCopierViewConfigure_e, // The configuration screen
+    KeyCopierViewSubmenu, 
+    KeyCopierViewTextInput,
+    KeyCopierViewConfigure_i, 
+    KeyCopierViewConfigure_e,
     KeyCopierViewSave,
     KeyCopierViewLoad,
-    KeyCopierViewMeasure, // The main screen
-    KeyCopierViewAbout, // The about screen with directions, link to social channel, etc.
+    KeyCopierViewMeasure,
+    KeyCopierViewAbout,
 } KeyCopierView;
 
-typedef enum {
-    KeyCopierEventIdRedrawScreen = 0, // Custom event to redraw the screen
-} KeyCopierEventId;
-
 typedef struct {
-    ViewDispatcher* view_dispatcher; // Switches between our views
-    NotificationApp* notifications; // Used for controlling the backlight
-    Submenu* submenu; // The application menu
-    TextInput* text_input; // The text input screen
-    VariableItemList* variable_item_list_config; // The configuration screen
-    View* view_measure; // The main screen
-    View* view_config_e; // The configuration screen
+    ViewDispatcher* view_dispatcher; 
+    NotificationApp* notifications; 
+    Submenu* submenu; 
+    TextInput* text_input; 
+    VariableItemList* variable_item_list_config; 
+    View* view_measure; 
+    View* view_config_e; 
     View* view_save;
-    View* view_load; // The load view
-    Widget* widget_about; // The about screen
-    VariableItem* key_name_item; // The name setting item (so we can update the text)
+    View* view_load; 
+    Widget* widget_about; 
+    VariableItem* key_name_item; 
     VariableItem* format_item;
-    char* temp_buffer; // Temporary buffer for text input
-    uint32_t temp_buffer_size; // Size of temporary buffer
+    char* temp_buffer; 
+    uint32_t temp_buffer_size;
 
     DialogsApp* dialogs;
     FuriString* file_path;
-    FuriTimer* timer; // Timer for redrawing the screen
 } KeyCopierApp;
 
 typedef struct {
-    uint32_t format_index; // The index for total number of pins
-    FuriString* key_name_str; // The name setting
+    uint32_t format_index; 
+    FuriString* key_name_str; 
     uint8_t pin_slc; // The pin that is being adjusted
     uint8_t* depth; // The cutting depth
     bool data_loaded;
@@ -94,36 +84,16 @@ void initialize_model(KeyCopierModel* model) {
     model->key_name_str = furi_string_alloc();
 }
 
-/**
- * @brief      Callback for exiting the application.
- * @details    This function is called when user press back button.  We return VIEW_NONE to
- *            indicate that we want to exit the application.
- * @param      _context  The context - unused
- * @return     next view id
-*/
 static uint32_t key_copier_navigation_exit_callback(void* _context) {
     UNUSED(_context);
     return VIEW_NONE;
 }
 
-/**
- * @brief      Callback for returning to submenu.
- * @details    This function is called when user press back button.  We return VIEW_NONE to
- *            indicate that we want to navigate to the submenu.
- * @param      _context  The context - unused
- * @return     next view id
-*/
 static uint32_t key_copier_navigation_submenu_callback(void* _context) {
     UNUSED(_context);
     return KeyCopierViewSubmenu;
 }
 
-/**
- * @brief      Handle submenu item selection.
- * @details    This function is called when user selects an item from the submenu.
- * @param      context  The context - KeyCopierApp object.
- * @param      index     The KeyCopierSubmenuIndex item that was clicked.
-*/
 static void key_copier_submenu_callback(void* context, uint32_t index) {
     KeyCopierApp* app = (KeyCopierApp*)context;
     switch(index) {
@@ -261,13 +231,7 @@ static void key_copier_file_saver(void* context) {
 
     view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewSubmenu);
 }
-/**
- * @brief      Callback when item in configuration screen is clicked.
- * @details    This function is called when user clicks OK on an item in the configuration screen.
- *            If the item clicked is our text field then we switch to the text input screen.
- * @param      context  The context - KeyCopierApp object.
- * @param      index - The index of the item that was clicked.
-*/
+
 static void key_copier_view_save_callback(void* context) {
     KeyCopierApp* app = (KeyCopierApp*)context;
     // Header to display on the text input screen.
@@ -286,7 +250,7 @@ static void key_copier_view_save_callback(void* context) {
         },
         redraw);
 
-    // Configure the text input.  When user enters text and clicks OK, key_copier_setting_text_updated be called.
+    // Configure the text input.  When user enters text and clicks OK, key_copier_file_saver be called.
     bool clear_previous_text = false;
     text_input_set_result_callback(
         app->text_input,
@@ -296,7 +260,6 @@ static void key_copier_view_save_callback(void* context) {
         app->temp_buffer_size,
         clear_previous_text);
 
-    // Pressing the BACK button will reload the configure screen.
     view_set_previous_callback(
         text_input_get_view(app->text_input), key_copier_navigation_submenu_callback);
 
@@ -342,12 +305,6 @@ static void key_copier_view_load_callback(void* context) {
     view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewSubmenu);
 }
 
-/**
- * @brief      Callback for drawing the game screen.
- * @details    This function is called when the screen needs to be redrawn, like when the model gets updated.
- * @param      canvas  The canvas to draw on.
- * @param      model   The model - MyModel object.
-*/
 static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     static double inches_per_px = (double)INCHES_PER_PX;
     canvas_set_bitmap_mode(canvas, true);
@@ -480,19 +437,11 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     furi_string_free(buffer);
 }
 
-/**
- * @brief      Callback for game screen input.
- * @details    This function is called when the user presses a button while on the game screen.
- * @param      event    The event - InputEvent object.
- * @param      context  The context - KeyCopierApp object.
- * @return     true if the event was handled, false otherwise.
-*/
 static bool key_copier_view_measure_input_callback(InputEvent* event, void* context) {
     KeyCopierApp* app = (KeyCopierApp*)context;
     if(event->type == InputTypeShort) {
         switch(event->key) {
         case InputKeyLeft: {
-            // Left button clicked, reduce x coordinate.
             bool redraw = true;
             with_view_model(
                 app->view_measure,
@@ -506,7 +455,6 @@ static bool key_copier_view_measure_input_callback(InputEvent* event, void* cont
             break;
         }
         case InputKeyRight: {
-            // Left button clicked, reduce x coordinate.
             bool redraw = true;
             with_view_model(
                 app->view_measure,
@@ -520,7 +468,6 @@ static bool key_copier_view_measure_input_callback(InputEvent* event, void* cont
             break;
         }
         case InputKeyUp: {
-            // Left button clicked, reduce x coordinate.
             bool redraw = true;
             with_view_model(
                 app->view_measure,
@@ -554,7 +501,6 @@ static bool key_copier_view_measure_input_callback(InputEvent* event, void* cont
             break;
         }
         case InputKeyDown: {
-            // Right button clicked, increase x coordinate.
             bool redraw = true;
             with_view_model(
                 app->view_measure,
@@ -596,11 +542,6 @@ static bool key_copier_view_measure_input_callback(InputEvent* event, void* cont
     return false;
 }
 
-/**
- * @brief      Allocate the key_copier application.
- * @details    This function allocates the key_copier application resources.
- * @return     KeyCopierApp object.
-*/
 static KeyCopierApp* key_copier_app_alloc() {
     KeyCopierApp* app = (KeyCopierApp*)malloc(sizeof(KeyCopierApp));
 
@@ -691,11 +632,6 @@ static KeyCopierApp* key_copier_app_alloc() {
     return app;
 }
 
-/**
- * @brief      Free the key_copier application.
- * @details    This function frees the key_copier application resources.
- * @param      app  The key_copier application object.
-*/
 static void key_copier_app_free(KeyCopierApp* app) {
 #ifdef BACKLIGHT_ON
     notification_message(app->notifications, &sequence_display_backlight_enforce_auto);
@@ -731,13 +667,6 @@ static void key_copier_app_free(KeyCopierApp* app) {
     free(app);
 }
 
-/**
- * @brief      Main function for key_copier application.
- * @details    This function is the entry point for the key_copier application.  It should be defined in
- *           application.fam as the entry_point setting.
- * @param      _p  Input parameter - unused
- * @return     0 - Success
-*/
 int32_t main_key_copier_app(void* _p) {
     UNUSED(_p);
 
