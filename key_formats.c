@@ -76,7 +76,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 7,
      .macs = 7,
-     .clearance = 8},
+     .clearance = 8}},
 
     {.manufacturer = "American",
      .format_name = "AM7",
@@ -95,4 +95,4 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 8,
      .macs = 7,
-     .clearance = 8}};
+     .clearance = 8},
