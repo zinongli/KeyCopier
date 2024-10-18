@@ -49,10 +49,9 @@ const KeyFormat all_formats[] = {
      .pin_num = 6,
      .pin_width_inch = 0.060,
      .elbow_inch = 0.1,
-     .drill_angle =
-         105, // This should actually be 100 but the current resolution will
-              // make 100 degrees very ugly and unsuable
-     .uncut_depth_inch = 0.335,
+     .drill_angle = 105, //
+                         //
+     .uncut_depth_inch = 0.312,
      .deepest_depth_inch = 0.186,
      .depth_step_inch = 0.014,
      .min_depth_ind = 0,
@@ -69,9 +68,8 @@ const KeyFormat all_formats[] = {
      .pin_num = 5,
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1,
-     .drill_angle =
-         90, // This should actually be 100 but the current resolution will make
-             // 100 degrees very ugly and unsuable
+     .drill_angle = 90, //
+                        //
      .uncut_depth_inch = 0.276,
      .deepest_depth_inch = 0.171,
      .depth_step_inch = 0.015,
@@ -89,10 +87,9 @@ const KeyFormat all_formats[] = {
      .pin_num = 6,
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1,
-     .drill_angle =
-         90, // This should actually be 100 but the current resolution will make
-             // 100 degrees very ugly and unsuable
-     .uncut_depth_inch = 0.238,
+     .drill_angle = 90, //
+                        //
+     .uncut_depth_inch = 0.283,
      .deepest_depth_inch = 0.173,
      .depth_step_inch = 0.016,
      .min_depth_ind = 0,
