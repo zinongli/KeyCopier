@@ -449,6 +449,8 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     int elbow_px = (int)round(my_format.elbow_inch / inches_per_px);
     canvas_draw_line(canvas, 0, 62, level_contour_px, 62);
     canvas_draw_line(canvas, level_contour_px, 62, level_contour_px + elbow_px, 62 - elbow_px);
+    //canvas_draw_line(canvas, level_contour_px, 62, level_contour_px, 62 - (2 * elbow_px));
+    canvas_draw_line(canvas, 1, 1, 1, 63);
 
     int slc_pin_px = (int)round(
         (my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch) /
