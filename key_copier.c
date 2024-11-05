@@ -458,7 +458,7 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     canvas_draw_icon(canvas, slc_pin_px - 2, top_contour_px - 25, &I_arrow_down);
 
     furi_string_printf(buffer, "%s", my_format.format_name);
-    canvas_draw_str(canvas, 110, 10, furi_string_get_cstr(buffer));
+    canvas_draw_str(canvas, 100, 10, furi_string_get_cstr(buffer));
     furi_string_free(buffer);
 }
 
