@@ -321,9 +321,13 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
         (180 - my_format.drill_angle) / 2 / 180 * (double)M_PI; // Convert angle to radians
     double tangent = tan(drill_radians);
     int top_contour_px = (int)round(62 - my_format.uncut_depth_inch / inches_per_px);
-    int bottom_contour_px =
-        top_contour_px + (int)round(my_format.uncut_depth_inch / inches_per_px);
-
+    int bottom_contour_px = 0;
+    // int bottom_contour_px =
+    //     top_contour_px + (int)round(my_format.uncut_depth_inch /
+    //     inches_per_px);
+    if(my_format.sides == 2)
+        bottom_contour_px =
+            top_contour_px + (int)round(my_format.uncut_depth_inch / inches_per_px);
     int post_extra_x_px = 0;
     int pre_extra_x_px = 0;
     for(int current_pin = 1; current_pin <= my_model->format.pin_num; current_pin += 1) {
@@ -356,12 +360,13 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
             pin_center_px + pin_half_width_px,
             top_contour_px + current_depth_px); // draw top pin width horizontal line
 
-        canvas_draw_line(
-            canvas,
-            pin_center_px - pin_half_width_px,
-            bottom_contour_px - current_depth_px,
-            pin_center_px + pin_half_width_px,
-            bottom_contour_px - current_depth_px); // draw bottom pin width horizontal line
+        if(my_format.sides == 2)
+            canvas_draw_line(
+                canvas,
+                pin_center_px - pin_half_width_px,
+                bottom_contour_px - current_depth_px,
+                pin_center_px + pin_half_width_px,
+                bottom_contour_px - current_depth_px); // draw bottom pin width horizontal line
 
         int last_depth = my_model->depth[current_pin - 2] - my_format.min_depth_ind;
         int next_depth = my_model->depth[current_pin] - my_format.min_depth_ind;
@@ -371,15 +376,16 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
                 0,
                 top_contour_px,
                 pin_center_px - pin_half_width_px - current_depth_px,
-                top_contour_px);
+                top_contour_px); // draw top shoulder
             last_depth = 0;
             pre_extra_x_px = max(current_depth_px + pin_half_width_px, 0);
+
             canvas_draw_line(
                 canvas,
                 0,
                 bottom_contour_px,
                 pin_center_px - pin_half_width_px - current_depth_px,
-                bottom_contour_px);
+                bottom_contour_px); // draw bottom shoulder (hidden by level contour)
         }
         if(current_pin == my_model->format.pin_num) {
             next_depth = 0;
@@ -449,7 +455,6 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     int elbow_px = (int)round(my_format.elbow_inch / inches_per_px);
     canvas_draw_line(canvas, 0, 62, level_contour_px, 62);
     canvas_draw_line(canvas, level_contour_px, 62, level_contour_px + elbow_px, 62 - elbow_px);
-    //canvas_draw_line(canvas, level_contour_px, 62, level_contour_px, 62 - (2 * elbow_px));
     canvas_draw_line(canvas, 1, 1, 1, 63);
 
     int slc_pin_px = (int)round(
