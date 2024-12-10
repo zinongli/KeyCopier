@@ -1,5 +1,5 @@
 #include "key_formats.h"
- // all lengths in inches since it's all American formats
+// all lengths in inches since it's all American formats
 // angle is in degrees
 const KeyFormat all_formats[] = {
     {
