@@ -4,9 +4,9 @@
 #define FORMAT_NUM 12
 
 typedef struct {
-    char* manufacturer;
-    char* format_name;
-    char* format_link;
+    char * manufacturer;
+    char * format_name;
+    char * format_link;
     int sides;
     double first_pin_inch;
     double last_pin_inch;
@@ -16,16 +16,18 @@ typedef struct {
     double drill_angle;
     double elbow_inch;
 
-  double uncut_depth_inch;
-  double deepest_depth_inch;
-  double depth_step_inch;
-  int min_depth_ind;
-  int max_depth_ind;
+    double uncut_depth_inch;
+    double deepest_depth_inch;
+    double depth_step_inch;
+    int min_depth_ind;
+    int max_depth_ind;
 
-  int macs;
-  int clearance;
-} KeyFormat;
+    int macs;
+    int clearance;
+}
+KeyFormat;
 
-extern const KeyFormat all_formats[FORMAT_NUM];
+extern
+const KeyFormat all_formats[FORMAT_NUM];
 
 #endif // KEY_FORMATS_H
