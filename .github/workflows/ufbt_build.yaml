@@ -17,6 +17,8 @@ jobs:
         include:
           - name: dev channel
             sdk-channel: dev
+          - name: release-canidate channel
+            sdk-channel: rc
           - name: release channel
             sdk-channel: release
     name: 'ufbt: Build for ${{ matrix.name }}'
