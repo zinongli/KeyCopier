@@ -1,20 +1,20 @@
 #ifndef KEY_FORMATS_H
 #define KEY_FORMATS_H
 
-#define FORMAT_NUM 5
+#define FORMAT_NUM 12
 
 typedef struct {
-  char *manufacturer;
-  char *format_name;
-  char *format_link;
-
-  double first_pin_inch;
-  double last_pin_inch;
-  double pin_increment_inch;
-  int pin_num;
-  double pin_width_inch;
-  double drill_angle;
-  double elbow_inch;
+    char* manufacturer;
+    char* format_name;
+    char* format_link;
+    int sides;
+    double first_pin_inch;
+    double last_pin_inch;
+    double pin_increment_inch;
+    int pin_num;
+    double pin_width_inch;
+    double drill_angle;
+    double elbow_inch;
 
   double uncut_depth_inch;
   double deepest_depth_inch;
