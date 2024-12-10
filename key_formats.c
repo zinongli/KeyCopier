@@ -31,7 +31,8 @@ const KeyFormat all_formats[] = {
     .pin_num = 6,
     .pin_width_inch = 0.031,
     .elbow_inch = 0.1,
-    .drill_angle = 90, // This should actually be 100 but the current resolution will make 100 degrees very ugly and unsuable
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
     .uncut_depth_inch = 0.335,
     .deepest_depth_inch = 0.2,
     .depth_step_inch = 0.015,
@@ -62,6 +63,27 @@ const KeyFormat all_formats[] = {
     },
 
     {
+    .manufacturer = "Arrow",
+    .format_name = "AR4",
+    .format_link = "https://lsamichigan.org/Tech/SCHLAGE_KeySpecs.pdf",
+    .first_pin_inch = 0.265,
+    .last_pin_inch = 1.040,
+    .pin_increment_inch = 0.155,
+    .pin_num = 6,
+    .pin_width_inch = 0.060,
+    .elbow_inch = 0.1,
+    .drill_angle = 105, // This should actually be 100 but the current resolution will
+    // make 100 degrees very ugly and unsuable
+    .uncut_depth_inch = 0.312,
+    .deepest_depth_inch = 0.186,
+    .depth_step_inch = 0.014,
+    .min_depth_ind = 0,
+    .max_depth_ind = 10,
+    .macs = 7,
+    .clearance = 6
+    },
+
+    {
     .manufacturer = "Master Lock",
     .format_name = "M1",
     .format_link = "https://lsamichigan.org/Tech/SCHLAGE_KeySpecs.pdf",
@@ -71,7 +93,8 @@ const KeyFormat all_formats[] = {
     .pin_num = 5,
     .pin_width_inch = 0.039,
     .elbow_inch = 0.1,
-    .drill_angle = 90, // This should actually be 100 but the current resolution will make 100 degrees very ugly and unsuable
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
     .uncut_depth_inch = 0.276,
     .deepest_depth_inch = 0.171,
     .depth_step_inch = 0.015,
@@ -91,12 +114,139 @@ const KeyFormat all_formats[] = {
     .pin_num = 6,
     .pin_width_inch = 0.039,
     .elbow_inch = 0.1,
-    .drill_angle = 90, // This should actually be 100 but the current resolution will make 100 degrees very ugly and unsuable
-    .uncut_depth_inch = 0.238,
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
+    .uncut_depth_inch = 0.283,
     .deepest_depth_inch = 0.173,
     .depth_step_inch = 0.016,
     .min_depth_ind = 0,
     .max_depth_ind = 8,
+    .macs = 7,
+    .clearance = 8
+    },
+
+    {
+    .manufacturer = "Yale",
+    .format_name = "Y2",
+    .format_link = "https://lsamichigan.org/Tech/SCHLAGE_KeySpecs.pdf",
+    .first_pin_inch = 0.200,
+    .last_pin_inch = 1.025,
+    .pin_increment_inch = 0.165,
+    .pin_num = 6,
+    .pin_width_inch = 0.054,
+    .elbow_inch = 0.1,
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
+    .uncut_depth_inch = 0.320,
+    .deepest_depth_inch = 0.145,
+    .depth_step_inch = 0.025,
+    .min_depth_ind = 0,
+    .max_depth_ind = 9,
+    .macs = 9,
+    .clearance = 1
+    },
+
+    {.manufacturer = "Yale",
+    .format_name = "Y11",
+    .format_link = "https://lsamichigan.org/Tech/SCHLAGE_KeySpecs.pdf",
+    .first_pin_inch = 0.124,
+    .last_pin_inch = 0.502,
+    .pin_increment_inch = 0.095,
+    .pin_num = 5,
+    .pin_width_inch = 0.039,
+    .elbow_inch = 0.1,
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
+    .uncut_depth_inch = 0.246,
+    .deepest_depth_inch = 0.167,
+    .depth_step_inch = 0.020,
+    .min_depth_ind = 0,
+    .max_depth_ind = 5,
+    .macs = 7,
+    .clearance = 8
+    },
+
+    {
+    .manufacturer = "Sargent",
+    .format_name = "S22",
+    .format_link = "https://lsamichigan.org/Tech/SCHLAGE_KeySpecs.pdf",
+    .first_pin_inch = 0.216,
+    .last_pin_inch = 0.996,
+    .pin_increment_inch = 0.156,
+    .pin_num = 6,
+    .pin_width_inch = 0.063,
+    .elbow_inch = 0.1,
+    .drill_angle = 80, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
+    .uncut_depth_inch = 0.328,
+    .deepest_depth_inch = 0.148,
+    .depth_step_inch = 0.020,
+    .min_depth_ind = 0,
+    .max_depth_ind = 10,
+    .macs = 7,
+    .clearance = 8
+    },
+
+    {
+    .manufacturer = "National",
+    .format_name = "NA25",
+    .format_link = "https://lsamichigan.org/Tech/SCHLAGE_KeySpecs.pdf",
+    .first_pin_inch = 0.250,
+    .last_pin_inch = 0.874,
+    .pin_increment_inch = 0.156,
+    .pin_num = 5,
+    .pin_width_inch = 0.039,
+    .elbow_inch = 0.1,
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
+    .uncut_depth_inch = 0.304,
+    .deepest_depth_inch = 0.191,
+    .depth_step_inch = 0.012,
+    .min_depth_ind = 0,
+    .max_depth_ind = 10,
+    .macs = 7,
+    .clearance = 8
+    },
+
+    {
+    .manufacturer = "Corbin",
+    .format_name = "CO88",
+    .format_link = "https://lsamichigan.org/Tech/SCHLAGE_KeySpecs.pdf",
+    .first_pin_inch = 0.250,
+    .last_pin_inch = 1.030,
+    .pin_increment_inch = 0.156,
+    .pin_num = 6,
+    .pin_width_inch = 0.047,
+    .elbow_inch = 0.1,
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
+    .uncut_depth_inch = 0.343,
+    .deepest_depth_inch = 0.217,
+    .depth_step_inch = 0.014,
+    .min_depth_ind = 0,
+    .max_depth_ind = 10,
+    .macs = 7,
+    .clearance = 8
+    },
+
+    {
+    .manufacturer = "Ford",
+    .format_name = "H75",
+    .sides = 2,
+    .format_link = "https://lsamichigan.org/Tech/SCHLAGE_KeySpecs.pdf",
+    .first_pin_inch = 0.201,
+    .last_pin_inch = 0.845,
+    .pin_increment_inch = 0.092,
+    .pin_num = 10,
+    .pin_width_inch = 0.047,
+    .elbow_inch = 0.201, //
+    .drill_angle = 90, // This should actually be 100 but the current resolution will make
+    // 100 degrees very ugly and unsuable
+    .uncut_depth_inch = 0.343,
+    .deepest_depth_inch = 0.217,
+    .depth_step_inch = 0.014,
+    .min_depth_ind = 0,
+    .max_depth_ind = 10,
     .macs = 7,
     .clearance = 8
     }
