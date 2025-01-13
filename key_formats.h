@@ -7,7 +7,7 @@ typedef struct {
   char *manufacturer;
   char *format_name;
   char *format_link;
-
+  int sides;
   double first_pin_inch;
   double last_pin_inch;
   double pin_increment_inch;

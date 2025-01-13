@@ -153,7 +153,7 @@ const KeyFormat all_formats[] = {
      .drill_angle =
          90, // This should actually be 100 but the current resolution will make
      // 100 degrees very ugly and unsuable
-     .uncut_depth_inch = 0.328,
+     .uncut_depth_inch = 0.328, // double check
      .deepest_depth_inch = 0.148,
      .depth_step_inch = 0.020,
      .min_depth_ind = 0,
@@ -210,7 +210,8 @@ const KeyFormat all_formats[] = {
      .pin_increment_inch = 0.092,
      .pin_num = 8,
      .pin_width_inch = 0.039,
-     .elbow_inch = 0.201, //
+     .elbow_inch = 0.201, // this should be equal to first pin inch for tip
+                          // stopped key line
      .drill_angle =
          90, // This should actually be 100 but the current resolution will make
      // 100 degrees very ugly and unsuable
