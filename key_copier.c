@@ -537,9 +537,15 @@ static void key_copier_view_measure_draw_callback(Canvas *canvas, void *model) {
   canvas_draw_line(canvas, level_contour_px, 62, level_contour_px + elbow_px,
                    62 - elbow_px);
 
-  canvas_draw_line(
-      canvas, level_contour_px, 20, level_contour_px,
-      63); // change to if stop ==tip and measure from this point back.
+  if (my_format.stop == 2) {
+    // Draw a line using level_contour_px if stop equals tip
+    canvas_draw_line(
+        canvas, level_contour_px, top_contour_px, level_contour_px,
+        63); // change to if stop ==tip and measure from this point back.
+  } else {
+    // Otherwise, draw a default line
+    canvas_draw_line(canvas, 1, top_contour_px, 1, 63);
+  }
 
   int slc_pin_px =
       (int)round((my_format.first_pin_inch +
