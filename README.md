@@ -2,6 +2,9 @@
 A Flipper Zero app for measuring key bitting patterns.
 
 ## Instruction
+***
+Download updated format.c, format.h, keycopier.c keycopier.h files
+***
 To measure your key: 
 1. Place it on top of the screen.
 2. Use the contour to align your key.
