@@ -76,7 +76,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 7,
      .macs = 7,
-     .clearance = 8},
+     .clearance = 6},
 
     {.manufacturer = "American",
      .format_name = "AM7",
@@ -95,7 +95,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 8,
      .macs = 7,
-     .clearance = 8},
+     .clearance = 7},
 
     {.manufacturer = "Yale",
      .format_name = "Y2",
@@ -114,7 +114,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 9,
      .macs = 9,
-     .clearance = 1},
+     .clearance = 8},
 
     {.manufacturer = "Yale",
      .format_name = "Y11",
@@ -133,7 +133,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 5,
      .macs = 7,
-     .clearance = 8},
+     .clearance = 5},
 
     {.manufacturer = "Sargent",
      .format_name = "S22",
@@ -152,7 +152,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 10,
      .macs = 7,
-     .clearance = 8},
+     .clearance = 7},
 
     {.manufacturer = "National",
      .format_name = "NA25",
@@ -262,7 +262,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 6,
      .macs = 5,
-     .clearance = 8},
+     .clearance = 5},
 
     {.manufacturer = "Ford",
      .format_name = "H75",
