@@ -735,7 +735,7 @@ static KeyCopierApp* key_copier_app_alloc() {
         0,
         128,
         64,
-        "Key Maker App 1.0\nAuthor: @Torron\n\nTo measure your key:\n\n1. Place "
+        "Key Maker App 1.1\nAuthor: @Torron\n\nTo measure your key:\n\n1. Place "
         "it on top of the screen.\n\n2. Use the contour to align your key.\n\n3. "
         "Adjust each pin's depth until they match. It's easier if you look with "
         "one eye closed.\n\nGithub: github.com/zinongli/KeyCopier \n\nSpecial "
