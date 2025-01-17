@@ -1,22 +1,23 @@
+#include "key_copier.h"
+#include "key_copier_icons.h"
+#include "key_formats.h"
+#include <applications/services/dialogs/dialogs.h>
+#include <applications/services/storage/storage.h>
+#include <flipper_format.h>
 #include <furi.h>
 #include <furi_hal.h>
 #include <gui/gui.h>
-#include <gui/view.h>
-#include <gui/view_dispatcher.h>
 #include <gui/modules/submenu.h>
 #include <gui/modules/text_input.h>
-#include <gui/modules/widget.h>
 #include <gui/modules/variable_item_list.h>
+#include <gui/modules/widget.h>
+#include <gui/view.h>
+#include <gui/view_dispatcher.h>
+#include <math.h>
 #include <notification/notification.h>
 #include <notification/notification_messages.h>
-#include <applications/services/storage/storage.h>
-#include <applications/services/dialogs/dialogs.h>
 #include <stdbool.h>
-#include <math.h>
-#include <flipper_format.h>
-#include "key_copier_icons.h"
-#include "key_formats.h"
-#include "key_copier.h"
+
 #define TAG "KeyCopier"
 
 #define BACKLIGHT_ON 1
@@ -30,9 +31,9 @@ typedef enum {
 } KeyCopierSubmenuIndex;
 
 typedef enum {
-    KeyCopierViewSubmenu, 
+    KeyCopierViewSubmenu,
     KeyCopierViewTextInput,
-    KeyCopierViewConfigure_i, 
+    KeyCopierViewConfigure_i,
     KeyCopierViewConfigure_e,
     KeyCopierViewSave,
     KeyCopierViewLoad,
@@ -41,19 +42,19 @@ typedef enum {
 } KeyCopierView;
 
 typedef struct {
-    ViewDispatcher* view_dispatcher; 
-    NotificationApp* notifications; 
-    Submenu* submenu; 
-    TextInput* text_input; 
-    VariableItemList* variable_item_list_config; 
-    View* view_measure; 
-    View* view_config_e; 
+    ViewDispatcher* view_dispatcher;
+    NotificationApp* notifications;
+    Submenu* submenu;
+    TextInput* text_input;
+    VariableItemList* variable_item_list_config;
+    View* view_measure;
+    View* view_config_e;
     View* view_save;
-    View* view_load; 
-    Widget* widget_about; 
-    VariableItem* key_name_item; 
+    View* view_load;
+    Widget* widget_about;
+    VariableItem* key_name_item;
     VariableItem* format_item;
-    char* temp_buffer; 
+    char* temp_buffer;
     uint32_t temp_buffer_size;
 
     DialogsApp* dialogs;
@@ -61,8 +62,8 @@ typedef struct {
 } KeyCopierApp;
 
 typedef struct {
-    uint32_t format_index; 
-    FuriString* key_name_str; 
+    uint32_t format_index;
+    FuriString* key_name_str;
     uint8_t pin_slc; // The pin that is being adjusted
     uint8_t* depth; // The cutting depth
     bool data_loaded;
@@ -166,9 +167,11 @@ static void key_copier_config_enter_callback(void* context) {
     key_copier_format_change(app->format_item);
     view_set_previous_callback(view_config_i, key_copier_navigation_submenu_callback);
     view_dispatcher_remove_view(
-        app->view_dispatcher, KeyCopierViewConfigure_i); // delete the last one
+        app->view_dispatcher,
+        KeyCopierViewConfigure_i); // delete the last one
     view_dispatcher_add_view(app->view_dispatcher, KeyCopierViewConfigure_i, view_config_i);
-    view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewConfigure_i); // recreate it
+    view_dispatcher_switch_to_view(app->view_dispatcher,
+                                   KeyCopierViewConfigure_i); // recreate it
 }
 
 static const char* key_name_entry_text = "Enter name";
@@ -250,7 +253,8 @@ static void key_copier_view_save_callback(void* context) {
         },
         redraw);
 
-    // Configure the text input.  When user enters text and clicks OK, key_copier_file_saver be called.
+    // Configure the text input.  When user enters text and clicks OK,
+    // key_copier_file_saver be called.
     bool clear_previous_text = false;
     text_input_set_result_callback(
         app->text_input,
@@ -316,9 +320,18 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     double drill_radians =
         (180 - my_format.drill_angle) / 2 / 180 * (double)M_PI; // Convert angle to radians
     double tangent = tan(drill_radians);
-    int top_contour_px = (int)round(63 - my_format.uncut_depth_inch / inches_per_px);
+    int top_contour_px = (int)round(62 - my_format.uncut_depth_inch / inches_per_px);
+    int bottom_contour_px = 0;
+
+    if(my_format.sides == 2)
+        bottom_contour_px =
+            top_contour_px + (int)round(my_format.uncut_depth_inch / inches_per_px);
     int post_extra_x_px = 0;
     int pre_extra_x_px = 0;
+    int bottom_post_extra_x_px = 0; // new
+    int bottom_pre_extra_x_px = 0; // new
+    int level_contour_px =
+    (int)round((my_format.last_pin_inch + my_format.elbow_inch) / inches_per_px);
     for(int current_pin = 1; current_pin <= my_model->format.pin_num; current_pin += 1) {
         double current_center_px =
             my_format.first_pin_inch + (current_pin - 1) * my_format.pin_increment_inch;
@@ -347,7 +360,98 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
             pin_center_px - pin_half_width_px,
             top_contour_px + current_depth_px,
             pin_center_px + pin_half_width_px,
-            top_contour_px + current_depth_px); // draw pin width horizontal line
+            top_contour_px + current_depth_px); // draw top pin width horizontal line
+
+        if(my_format.sides == 2) { // new
+            int last_depth = my_model->depth[current_pin - 2] - my_format.min_depth_ind;
+            int next_depth = my_model->depth[current_pin] - my_format.min_depth_ind;
+            int current_depth = my_model->depth[current_pin - 1] - my_format.min_depth_ind;
+            int current_depth_px =
+                (int)round(current_depth * my_format.depth_step_inch / inches_per_px);
+
+            // Draw horizontal line for bottom pin
+            canvas_draw_line(
+                canvas,
+                pin_center_px - pin_half_width_px,
+                bottom_contour_px - current_depth_px,
+                pin_center_px + pin_half_width_px,
+                bottom_contour_px - current_depth_px);
+
+            // Handle first pin for bottom
+            if(current_pin == 1) {
+                canvas_draw_line(
+                    canvas,
+                    0,
+                    bottom_contour_px,
+                    pin_center_px - pin_half_width_px - current_depth_px,
+                    bottom_contour_px);
+                last_depth = 0;
+                bottom_pre_extra_x_px = max(current_depth_px + pin_half_width_px, 0);
+            }
+
+            // Handle left side intersection for bottom
+            if((last_depth + current_depth) > my_format.clearance) {
+                if(current_pin != 1) {
+                    bottom_pre_extra_x_px =
+                        min(max(pin_step_px - bottom_post_extra_x_px, pin_half_width_px),
+                            pin_step_px - pin_half_width_px);
+                }
+                canvas_draw_line(
+                    canvas,
+                    pin_center_px - bottom_pre_extra_x_px,
+                    bottom_contour_px -
+                        max((int)round(
+                                (current_depth_px - (bottom_pre_extra_x_px - pin_half_width_px)) *
+                                tangent),
+                            0),
+                    pin_center_px - pin_half_width_px,
+                    bottom_contour_px - (int)round(current_depth_px * tangent));
+            } else {
+                int last_depth_px =
+                    (int)round(last_depth * my_format.depth_step_inch / inches_per_px);
+                int up_slope_start_x_px = pin_center_px - pin_half_width_px - current_depth_px;
+                canvas_draw_line(
+                    canvas,
+                    pin_center_px - pin_half_width_px - current_depth_px,
+                    bottom_contour_px,
+                    pin_center_px - pin_half_width_px,
+                    bottom_contour_px - (int)round(current_depth_px * tangent));
+                canvas_draw_line(
+                    canvas,
+                    min(pin_center_px - pin_step_px + pin_half_width_px + last_depth_px,
+                        up_slope_start_x_px),
+                    bottom_contour_px,
+                    up_slope_start_x_px,
+                    bottom_contour_px);
+            }
+
+            // Handle right side intersection for bottom
+            if((current_depth + next_depth) > my_format.clearance) {
+                double numerator = (double)current_depth;
+                double denominator = (double)(current_depth + next_depth);
+                double product = (numerator / denominator) * pin_step_px;
+                bottom_post_extra_x_px =
+                    (int)min(max(product, pin_half_width_px), pin_step_px - pin_half_width_px);
+                canvas_draw_line(
+                    canvas,
+                    pin_center_px + pin_half_width_px,
+                    bottom_contour_px - current_depth_px,
+                    pin_center_px + bottom_post_extra_x_px,
+                    bottom_contour_px -
+                        max(current_depth_px -
+                                (int)round((bottom_post_extra_x_px - pin_half_width_px) * tangent),
+                            0));
+            } else {
+                canvas_draw_line(
+                    canvas,
+                    pin_center_px + pin_half_width_px,
+                    bottom_contour_px - (int)round(current_depth_px * tangent),
+                    pin_center_px + pin_half_width_px + current_depth_px,
+                    bottom_contour_px);
+            }
+        }
+        // new end
+
         int last_depth = my_model->depth[current_pin - 2] - my_format.min_depth_ind;
         int next_depth = my_model->depth[current_pin] - my_format.min_depth_ind;
         if(current_pin == 1) {
@@ -356,14 +460,25 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
                 0,
                 top_contour_px,
                 pin_center_px - pin_half_width_px - current_depth_px,
-                top_contour_px);
+                top_contour_px); // draw top shoulder
             last_depth = 0;
             pre_extra_x_px = max(current_depth_px + pin_half_width_px, 0);
+            if(my_format.sides == 2) {
+                canvas_draw_line(
+                    canvas,
+                    0,
+                    bottom_contour_px,
+                    pin_center_px - pin_half_width_px - current_depth_px,
+                    bottom_contour_px); // draw bottom shoulder (hidden by level contour)
+            } else {
+                canvas_draw_line(canvas, 0, 62, level_contour_px, 62);
+            }
         }
         if(current_pin == my_model->format.pin_num) {
             next_depth = 0;
         }
-        if((last_depth + current_depth) > my_format.clearance) { //yes intersection
+        if((last_depth + current_depth) > my_format.clearance) { // yes
+            // intersection
 
             if(current_pin != 1) {
                 pre_extra_x_px =
@@ -396,7 +511,8 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
                 down_slope_start_x_px,
                 top_contour_px);
         }
-        if((current_depth + next_depth) > my_format.clearance) { //yes intersection
+        if((current_depth + next_depth) > my_format.clearance) { // yes
+            // intersection
             double numerator = (double)current_depth;
             double denominator = (double)(current_depth + next_depth);
             double product = (numerator / denominator) * pin_step_px;
@@ -421,11 +537,16 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
         }
     }
 
-    int level_contour_px =
-        (int)round((my_format.last_pin_inch + my_format.elbow_inch) / inches_per_px);
     int elbow_px = (int)round(my_format.elbow_inch / inches_per_px);
-    canvas_draw_line(canvas, 0, 62, level_contour_px, 62);
     canvas_draw_line(canvas, level_contour_px, 62, level_contour_px + elbow_px, 62 - elbow_px);
+    canvas_draw_line(canvas, 0, top_contour_px - 6, 0, top_contour_px);
+    if(my_format.stop == 2) {
+        // Draw a line using level_contour_px if stop equals 2 elbow must be firt pin inch
+        canvas_draw_line(canvas, level_contour_px, top_contour_px, level_contour_px, 63);
+        //  } else {
+        // Otherwise, draw a default line
+        //    canvas_draw_line(canvas, 0, top_contour_px, 0, 63); // too confusing but may want later
+    }
 
     int slc_pin_px = (int)round(
         (my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch) /
@@ -433,7 +554,7 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     canvas_draw_icon(canvas, slc_pin_px - 2, top_contour_px - 25, &I_arrow_down);
 
     furi_string_printf(buffer, "%s", my_format.format_name);
-    canvas_draw_str(canvas, 110, 10, furi_string_get_cstr(buffer));
+    canvas_draw_str(canvas, 100, 10, furi_string_get_cstr(buffer));
     furi_string_free(buffer);
 }
 
@@ -474,13 +595,12 @@ static bool key_copier_view_measure_input_callback(InputEvent* event, void* cont
                 KeyCopierModel * model,
                 {
                     if(model->depth[model->pin_slc - 1] > model->format.min_depth_ind) {
-                        if(model->pin_slc == 1) { //first pin only limited by the next one
+                        if(model->pin_slc == 1) { // first pin only limited by the next one
                             if(model->depth[model->pin_slc] - model->depth[model->pin_slc - 1] <
                                model->format.macs)
                                 model->depth[model->pin_slc - 1]--;
-                        } else if(
-                            model->pin_slc ==
-                            model->format.pin_num) { //last pin only limited by the previous one
+                        } else if(model->pin_slc == model->format.pin_num) { // last pin only limited by
+                            // the previous one
                             if(model->depth[model->pin_slc - 2] -
                                    model->depth[model->pin_slc - 1] <
                                model->format.macs) {
@@ -507,13 +627,12 @@ static bool key_copier_view_measure_input_callback(InputEvent* event, void* cont
                 KeyCopierModel * model,
                 {
                     if(model->depth[model->pin_slc - 1] < model->format.max_depth_ind) {
-                        if(model->pin_slc == 1) { //first pin only limited by the next one
+                        if(model->pin_slc == 1) { // first pin only limited by the next one
                             if(model->depth[model->pin_slc - 1] - model->depth[model->pin_slc] <
                                model->format.macs)
                                 model->depth[model->pin_slc - 1]++;
-                        } else if(
-                            model->pin_slc ==
-                            model->format.pin_num) { //last pin only limited by the previous one
+                        } else if(model->pin_slc == model->format.pin_num) { // last pin only limited by
+                            // the previous one
                             if(model->depth[model->pin_slc - 1] -
                                    model->depth[model->pin_slc - 2] <
                                model->format.macs) {
@@ -548,7 +667,6 @@ static KeyCopierApp* key_copier_app_alloc() {
     Gui* gui = furi_record_open(RECORD_GUI);
 
     app->view_dispatcher = view_dispatcher_alloc();
-    view_dispatcher_enable_queue(app->view_dispatcher);
     view_dispatcher_attach_to_gui(app->view_dispatcher, gui, ViewDispatcherTypeFullscreen);
     view_dispatcher_set_event_callback_context(app->view_dispatcher, app);
     app->dialogs = furi_record_open(RECORD_DIALOGS);
@@ -617,7 +735,11 @@ static KeyCopierApp* key_copier_app_alloc() {
         0,
         128,
         64,
-        "Key Maker App 1.0\nAuthor: @Torron\n\nTo measure your key:\n\n1. Place it on top of the screen.\n\n2. Use the contour to align your key.\n\n3. Adjust each pin's depth until they match. It's easier if you look with one eye closed.\n\nGithub: github.com/zinongli/KeyCopier \n\nSpecial thanks to Derek Jamison's Skeleton App Template.");
+        "Key Maker App 1.1\nAuthor: @Torron\n\nTo measure your key:\n\n1. Place "
+        "it on top of the screen.\n\n2. Use the contour to align your key.\n\n3. "
+        "Adjust each pin's depth until they match. It's easier if you look with "
+        "one eye closed.\n\nGithub: github.com/zinongli/KeyCopier \n\nSpecial "
+        "thanks to Derek Jamison's Skeleton App Template.");
     view_set_previous_callback(
         widget_get_view(app->widget_about), key_copier_navigation_submenu_callback);
     view_dispatcher_add_view(
