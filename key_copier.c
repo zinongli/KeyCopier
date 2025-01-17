@@ -534,9 +534,9 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     if(my_format.stop == 2) {
         // Draw a line using level_contour_px if stop equals 2 elbow must be firt pin inch
         canvas_draw_line(canvas, level_contour_px, top_contour_px, level_contour_px, 63);
-    } else {
+        //  } else {
         // Otherwise, draw a default line
-        canvas_draw_line(canvas, 0, top_contour_px, 0, 63);
+        //    canvas_draw_line(canvas, 0, top_contour_px, 0, 63); // too confusing but may want later
     }
 
     int slc_pin_px = (int)round(
