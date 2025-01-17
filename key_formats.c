@@ -390,7 +390,7 @@ const KeyFormat all_formats[] = {
      .depth_step_inch = 0.025,
      .min_depth_ind = 0,
      .max_depth_ind = 9,
-     .macs = 5,
+     .macs = 7,
      .clearance = 0},
 
     {.manufacturer = "RV (FIC,GL,Bauer)",
