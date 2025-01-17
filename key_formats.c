@@ -95,7 +95,7 @@ const KeyFormat all_formats[] = {
 
     {.manufacturer = "Yale",
      .format_name = "Y2",
-     .format_link = ".025",
+     .format_link = "C57",
      .first_pin_inch = 0.250,
      .last_pin_inch = 1.095,
      .pin_increment_inch = 0.185,
