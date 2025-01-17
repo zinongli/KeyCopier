@@ -379,13 +379,6 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
                 top_contour_px); // draw top shoulder
             last_depth = 0;
             pre_extra_x_px = max(current_depth_px + pin_half_width_px, 0);
-
-            canvas_draw_line(
-                canvas,
-                0,
-                bottom_contour_px,
-                pin_center_px - pin_half_width_px - current_depth_px,
-                bottom_contour_px); // draw bottom shoulder (hidden by level contour)
         }
         if(current_pin == my_model->format.pin_num) {
             next_depth = 0;
@@ -455,7 +448,6 @@ static void key_copier_view_measure_draw_callback(Canvas* canvas, void* model) {
     int elbow_px = (int)round(my_format.elbow_inch / inches_per_px);
     canvas_draw_line(canvas, 0, 62, level_contour_px, 62);
     canvas_draw_line(canvas, level_contour_px, 62, level_contour_px + elbow_px, 62 - elbow_px);
-    canvas_draw_line(canvas, 1, 1, 1, 63);
 
     int slc_pin_px = (int)round(
         (my_format.first_pin_inch + (my_model->pin_slc - 1) * my_format.pin_increment_inch) /
