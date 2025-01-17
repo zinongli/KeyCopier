@@ -57,7 +57,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 9,
      .macs = 6,
-     .clearance = 8},
+     .clearance = 7},
 
     {.manufacturer = "Master Lock",
      .format_name = "M1",
@@ -95,7 +95,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 8,
      .macs = 7,
-     .clearance = 8},
+     .clearance = 5},
 
     {.manufacturer = "Yale",
      .format_name = "Y2",
@@ -113,8 +113,8 @@ const KeyFormat all_formats[] = {
      .depth_step_inch = 0.025,
      .min_depth_ind = 0,
      .max_depth_ind = 9,
-     .macs = 9,
-     .clearance = 1},
+     .macs = 5,
+     .clearance = 4},
 
     {.manufacturer = "Yale",
      .format_name = "Y11",
@@ -133,7 +133,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 5,
      .macs = 7,
-     .clearance = 8},
+     .clearance = 3},
 
     {.manufacturer = "Sargent",
      .format_name = "S22",
@@ -152,7 +152,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 10,
      .macs = 7,
-     .clearance = 8},
+     .clearance = 5},
 
     {.manufacturer = "National",
      .format_name = "NA25",
@@ -262,7 +262,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 6,
      .macs = 5,
-     .clearance = 8},
+     .clearance = 3},
 
     {.manufacturer = "Ford",
      .format_name = "H75",
@@ -284,7 +284,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 5,
      .macs = 5,
-     .clearance = 0},
+     .clearance = 2},
 
     {.manufacturer = "Chevrolet",
      .format_name = "B102",
@@ -306,7 +306,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 4,
      .macs = 5,
-     .clearance = 0},
+     .clearance = 2},
 
     {.manufacturer = "Dodge",
      .format_name = "Y159",
@@ -328,7 +328,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 4,
      .macs = 5,
-     .clearance = 0},
+     .clearance = 1},
 
     {.manufacturer = "Kawasaki",
      .format_name = "KA14",
@@ -349,7 +349,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 4,
      .macs = 4,
-     .clearance = 0},
+     .clearance = 3},
 
     {.manufacturer = "Yamaha",
      .format_name = "YM63",
@@ -370,7 +370,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 4,
      .macs = 4,
-     .clearance = 0},
+     .clearance = 3},
 
     {.manufacturer = "Best (A2)",
      .format_name = "SFIC",
@@ -392,7 +392,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 9,
      .macs = 5,
-     .clearance = 0},
+     .clearance = 3},
 
     {.manufacturer = "RV (FIC,GL,Bauer)",
      .format_name = "RV",
@@ -413,4 +413,4 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 3,
      .macs = 3,
-     .clearance = 0}};
+     .clearance = 1}};
