@@ -360,11 +360,10 @@ const KeyFormat all_formats[] = {
 
     {.manufacturer = "Best (A2)",
      .format_name = "SFIC",
-     .sides = 2,
      .stop = 2,
      .format_link = "C3",
-     .first_pin_inch = 0.170,
-     .last_pin_inch = 1.067,
+     .first_pin_inch = 0.250,
+     .last_pin_inch = 0.998,
      .pin_increment_inch = 0.149,
      .pin_num = 6,
      .pin_width_inch = 0.051,
