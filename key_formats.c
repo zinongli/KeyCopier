@@ -76,6 +76,25 @@ const KeyFormat all_formats[] = {
      .macs = 7,
      .clearance = 7},
 
+    {.manufacturer = "Elzett",
+     .format_name = "EL10",
+     .format_link = "2274",
+     .first_pin_inch = 0.206,
+     .last_pin_inch = 0.836,
+     .pin_increment_inch = 0.158,
+     .pin_num = 5,
+     .pin_width_inch = 0.051,
+     .elbow_inch = 0.1,
+     .drill_angle = 90, // This should actually be 100 but the current resolution will
+     // make 100 degrees very ugly and unsuable
+     .uncut_depth_inch = 0.339,
+     .deepest_depth_inch = 0.173,
+     .depth_step_inch = 0.024,
+     .min_depth_ind = 0,
+     .max_depth_ind = 7,
+     .macs = 6,
+     .clearance = 6},
+
     {.manufacturer = "Abus",
      .format_name = "AB3    ",
      .format_link = "C112",
@@ -83,7 +102,7 @@ const KeyFormat all_formats[] = {
      .last_pin_inch = 0.768,
      .pin_increment_inch = 0.122,
      .pin_num = 6,
-     .pin_width_inch = 0.025,
+     .pin_width_inch = 0.035,
      .elbow_inch = 0.1,
      .drill_angle = 90, // This should actually be 100 but the current resolution will make
      // 100 degrees very ugly and unsuable
@@ -133,7 +152,7 @@ const KeyFormat all_formats[] = {
      .macs = 5,
      .clearance = 4},
 
-    {.manufacturer = "American",
+    {.manufacturer = "American Lock",
      .format_name = "AM7",
      .format_link = "C80",
      .first_pin_inch = 0.157,
@@ -393,7 +412,7 @@ const KeyFormat all_formats[] = {
      .drill_angle = 90, // This should actually be 100 but the current resolution will make
      // 100 degrees very ugly and unsuable
      .uncut_depth_inch = 0.315,
-     .deepest_depth_inch = 0.161,
+     .deepest_depth_inch = 0.238,
      .depth_step_inch = 0.026,
      .min_depth_ind = 1,
      .max_depth_ind = 4,
@@ -415,12 +434,12 @@ const KeyFormat all_formats[] = {
      .drill_angle = 90, // This should actually be 100 but the current resolution will make
      // 100 degrees very ugly and unsuable
      .uncut_depth_inch = 0.339,
-     .deepest_depth_inch = 0.197,
-     .depth_step_inch = 0.047,
+     .deepest_depth_inch = 0.268,
+     .depth_step_inch = 0.024,
      .min_depth_ind = 1,
      .max_depth_ind = 4,
      .macs = 4,
-     .clearance = 1},
+     .clearance = 2},
 
     {.manufacturer = "Nissan",
      .format_name = "DA34",
