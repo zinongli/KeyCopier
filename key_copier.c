@@ -53,8 +53,7 @@ typedef struct {
     Widget* widget_about; 
     VariableItem* key_name_item; 
     VariableItem* format_item;
-    VariableItem* format_name_item;
-    char* temp_buffer;
+    char* temp_buffer; 
     uint32_t temp_buffer_size;
 
     DialogsApp* dialogs;
@@ -147,12 +146,9 @@ static void key_copier_format_change(VariableItem* item) {
     }
     model->data_loaded = false;
     variable_item_set_current_value_text(item, model->format.format_name);
-    variable_item_set_current_value_text(app->format_name_item, model->format.manufacturer);
     model->format = all_formats[model->format_index];
 }
-
 static const char* format_config_label = "Key Format";
-static const char* format_name_config_label = "Brand";
 static void key_copier_config_enter_callback(void* context) {
     KeyCopierApp* app = (KeyCopierApp*)context;
     KeyCopierModel* my_model = view_get_model(app->view_measure);
@@ -165,15 +161,8 @@ static void key_copier_config_enter_callback(void* context) {
         key_copier_format_change,
         app);
 
-    app->format_name_item = variable_item_list_add(
-        app->variable_item_list_config,
-       format_name_config_label,
-        0,
-        NULL,
-        NULL);
     View* view_config_i = variable_item_list_get_view(app->variable_item_list_config);
     variable_item_set_current_value_index(app->format_item, my_model->format_index);
-    variable_item_set_current_value_text(app->format_name_item, my_model->format.manufacturer);
     key_copier_format_change(app->format_item);
     view_set_previous_callback(view_config_i, key_copier_navigation_submenu_callback);
     view_dispatcher_remove_view(
@@ -565,17 +554,16 @@ static KeyCopierApp* key_copier_app_alloc() {
     app->dialogs = furi_record_open(RECORD_DIALOGS);
     app->file_path = furi_string_alloc();
     app->submenu = submenu_alloc();
-    submenu_set_header(app->submenu, "Key Copier v1.1");
-    submenu_add_item(
-        app->submenu, "Select Template", KeyCopierSubmenuIndexConfigure, key_copier_submenu_callback, app);
     submenu_add_item(
         app->submenu, "Measure", KeyCopierSubmenuIndexMeasure, key_copier_submenu_callback, app);
+    submenu_add_item(
+        app->submenu, "Config", KeyCopierSubmenuIndexConfigure, key_copier_submenu_callback, app);
     submenu_add_item(
         app->submenu, "Save", KeyCopierSubmenuIndexSave, key_copier_submenu_callback, app);
     submenu_add_item(
         app->submenu, "Load", KeyCopierSubmenuIndexLoad, key_copier_submenu_callback, app);
     submenu_add_item(
-        app->submenu, "Help", KeyCopierSubmenuIndexAbout, key_copier_submenu_callback, app);
+        app->submenu, "About", KeyCopierSubmenuIndexAbout, key_copier_submenu_callback, app);
     view_set_previous_callback(
         submenu_get_view(app->submenu), key_copier_navigation_exit_callback);
     view_dispatcher_add_view(
