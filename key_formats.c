@@ -55,7 +55,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 9,
      .macs = 7,
-     .clearance = 7},
+     .clearance = 3},
 
     {.manufacturer = "Arrow",
      .format_name = "AR4",
@@ -92,10 +92,10 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 7,
      .macs = 6,
-     .clearance = 6},
+     .clearance = 3},
 
     {.manufacturer = "Abus",
-     .format_name = "AB3    ",
+     .format_name = "AB3",
      .format_link = "C112",
      .first_pin_inch = 0.157,
      .last_pin_inch = 0.768,
@@ -146,7 +146,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 6,
      .macs = 5,
-     .clearance = 4},
+     .clearance = 5},
 
     {.manufacturer = "American Lock",
      .format_name = "AM7",
@@ -240,7 +240,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 4,
      .macs = 5,
-     .clearance = 3},
+     .clearance = 1},
 
     {.manufacturer = "National",
      .format_name = "NA25",
@@ -296,7 +296,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 9,
      .macs = 9,
-     .clearance = 6},
+     .clearance = 4},
 
     {.manufacturer = "Lockwood",
      .format_name = "LW4",
