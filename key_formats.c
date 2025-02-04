@@ -29,8 +29,8 @@ const KeyFormat all_formats[] = {
      .pin_num = 6,
      .pin_width_inch = 0.031,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.335,
      .deepest_depth_inch = 0.2,
      .depth_step_inch = 0.015,
@@ -85,8 +85,7 @@ const KeyFormat all_formats[] = {
      .pin_num = 5,
      .pin_width_inch = 0.051,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will
-     // make 100 degrees very ugly and unsuable
+     .drill_angle = 90,
      .uncut_depth_inch = 0.339,
      .deepest_depth_inch = 0.173,
      .depth_step_inch = 0.024,
@@ -104,8 +103,7 @@ const KeyFormat all_formats[] = {
      .pin_num = 6,
      .pin_width_inch = 0.035,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
      .uncut_depth_inch = 0.254,
      .deepest_depth_inch = 0.152,
      .depth_step_inch = 0.025,
@@ -123,8 +121,7 @@ const KeyFormat all_formats[] = {
      .pin_num = 5,
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
      .uncut_depth_inch = 0.276,
      .deepest_depth_inch = 0.171,
      .depth_step_inch = 0.015,
@@ -142,8 +139,7 @@ const KeyFormat all_formats[] = {
      .pin_num = 4,
      .pin_width_inch = 0.031,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
      .uncut_depth_inch = 0.210,
      .deepest_depth_inch = 0.120,
      .depth_step_inch = 0.015,
@@ -161,8 +157,7 @@ const KeyFormat all_formats[] = {
      .pin_num = 6,
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
      .uncut_depth_inch = 0.283,
      .deepest_depth_inch = 0.173,
      .depth_step_inch = 0.016,
@@ -180,8 +175,8 @@ const KeyFormat all_formats[] = {
      .pin_num = 6,
      .pin_width_inch = 0.054,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.320,
      .deepest_depth_inch = 0.149,
      .depth_step_inch = 0.019,
@@ -199,8 +194,8 @@ const KeyFormat all_formats[] = {
      .pin_num = 5,
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.246,
      .deepest_depth_inch = 0.167,
      .depth_step_inch = 0.020,
@@ -218,8 +213,8 @@ const KeyFormat all_formats[] = {
      .pin_num = 6,
      .pin_width_inch = 0.063,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.328, // double check
      .deepest_depth_inch = 0.148,
      .depth_step_inch = 0.020,
@@ -237,8 +232,8 @@ const KeyFormat all_formats[] = {
      .pin_num = 5,
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.250,
      .deepest_depth_inch = 0.175,
      .depth_step_inch = 0.025,
@@ -256,8 +251,8 @@ const KeyFormat all_formats[] = {
      .pin_num = 5,
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.304,
      .deepest_depth_inch = 0.191,
      .depth_step_inch = 0.012,
@@ -275,8 +270,8 @@ const KeyFormat all_formats[] = {
      .pin_num = 6,
      .pin_width_inch = 0.047,
      .elbow_inch = 0.1,
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.343,
      .deepest_depth_inch = 0.217,
      .depth_step_inch = 0.014,
@@ -387,8 +382,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.039,
      .elbow_inch = 0.201, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.354,
      .deepest_depth_inch = 0.254,
      .depth_step_inch = 0.025,
@@ -409,8 +404,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.039,
      .elbow_inch = 0.205, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.315,
      .deepest_depth_inch = 0.238,
      .depth_step_inch = 0.026,
@@ -431,8 +426,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.039,
      .elbow_inch = 0.297, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.339,
      .deepest_depth_inch = 0.268,
      .depth_step_inch = 0.024,
@@ -453,8 +448,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.031,
      .elbow_inch = 0.169, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.334,
      .deepest_depth_inch = 0.257,
      .depth_step_inch = 0.026,
@@ -475,8 +470,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.031,
      .elbow_inch = 0.217, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.331,
      .deepest_depth_inch = 0.252,
      .depth_step_inch = 0.020,
@@ -496,8 +491,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.258,
      .deepest_depth_inch = 0.198,
      .depth_step_inch = 0.020,
@@ -517,8 +512,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.039,
      .elbow_inch = 0.1, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.295,
      .deepest_depth_inch = 0.236,
      .depth_step_inch = 0.020,
@@ -538,8 +533,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.051,
      .elbow_inch = 0.081, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.318,
      .deepest_depth_inch = 0.206,
      .depth_step_inch = 0.013,
@@ -559,8 +554,8 @@ const KeyFormat all_formats[] = {
      .pin_width_inch = 0.039,
      .elbow_inch = 0.126, // this should be equal to first pin inch for tip
      // stopped key line
-     .drill_angle = 90, // This should actually be 100 but the current resolution will make
-     // 100 degrees very ugly and unsuable
+     .drill_angle = 90, 
+     
      .uncut_depth_inch = 0.272,
      .deepest_depth_inch = 0.224,
      .depth_step_inch = 0.024,
