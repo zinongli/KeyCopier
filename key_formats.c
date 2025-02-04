@@ -55,7 +55,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 9,
      .macs = 7,
-     .clearance = 3},
+     .clearance = 5},
 
     {.manufacturer = "Arrow",
      .format_name = "AR4",
@@ -92,7 +92,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 0,
      .max_depth_ind = 7,
      .macs = 6,
-     .clearance = 3},
+     .clearance = 4},
 
     {.manufacturer = "Abus",
      .format_name = "AB3",
