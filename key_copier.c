@@ -701,7 +701,6 @@ static KeyCopierApp* key_copier_app_alloc() {
         app->view_dispatcher, KeyCopierViewTextInput, text_input_get_view(app->text_input));
     app->temp_buffer_size = 32;
     app->temp_buffer = (char*)malloc(app->temp_buffer_size);
-    app->temp_buffer = "";
 
     app->view_measure = view_alloc();
     view_set_draw_callback(app->view_measure, key_copier_view_measure_draw_callback);
