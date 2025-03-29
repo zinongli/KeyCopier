@@ -39,6 +39,8 @@ typedef enum {
     KeyCopierViewLoad,
     KeyCopierViewMeasure,
     KeyCopierViewAbout,
+    KeyCopierViewManufacturerList,
+    KeyCopierViewFormatList,
 } KeyCopierView;
 
 typedef struct {
@@ -60,6 +62,9 @@ typedef struct {
 
     DialogsApp* dialogs;
     FuriString* file_path;
+    Submenu* manufacturer_list;
+    Submenu* format_list;
+    char* selected_manufacturer;
 } KeyCopierApp;
 
 typedef struct {
@@ -127,56 +132,42 @@ void initialize_manufacturers(char** manufacturers) {
     }
 }
 
-static void key_copier_format_change(VariableItem* item) {
-    KeyCopierApp* app = variable_item_get_context(item);
-    KeyCopierModel* model = view_get_model(app->view_measure);
-    if(model->data_loaded) {
-        variable_item_set_current_value_index(item, model->format_index);
-    }
-    uint8_t format_index = variable_item_get_current_value_index(item);
-    if(format_index != model->format_index) {
-        model->format_index = format_index;
-        model->format = all_formats[format_index];
-        if(model->depth != NULL) {
-            free(model->depth);
-        }
-        model->depth = (uint8_t*)malloc((model->format.pin_num + 1) * sizeof(uint8_t));
-        for(uint8_t i = 0; i <= model->format.pin_num; i++) {
-            model->depth[i] = model->format.min_depth_ind;
-        }
-        model->pin_slc = 1;
-    }
-    model->data_loaded = false;
-    variable_item_set_current_value_text(item, model->format.format_name);
-    variable_item_set_current_value_text(app->format_name_item, model->format.manufacturer);
-    model->format = all_formats[model->format_index];
-}
+static void manufacturer_selected_callback(void* context, uint32_t index);
+static void format_selected_callback(void* context, uint32_t index);
 
-static const char* format_config_label = "Key Format";
-static const char* format_name_config_label = "Brand";
+
 static void key_copier_config_enter_callback(void* context) {
     KeyCopierApp* app = (KeyCopierApp*)context;
-    KeyCopierModel* my_model = view_get_model(app->view_measure);
-    variable_item_list_reset(app->variable_item_list_config);
-    // Recreate this view every time we enter it so that it's always updated
-    app->format_item = variable_item_list_add(
-        app->variable_item_list_config,
-        format_config_label,
-        COUNT_OF(all_formats),
-        key_copier_format_change,
-        app);
+    
+    // Clear manufacturer list
+    submenu_reset(app->manufacturer_list);
+    
+    // Track added manufacturers to avoid duplicates
+    char* added_manufacturers[COUNT_OF(all_formats)];
+    size_t added_count = 0;
+    
+    // Add unique manufacturers
+    for(size_t i = 0; i < COUNT_OF(all_formats); i++) {
+        bool already_added = false;
+        for(size_t j = 0; j < added_count; j++) {
+            if(strcmp(all_formats[i].manufacturer, added_manufacturers[j]) == 0) {
+                already_added = true;
+                break;
+            }
+        }
+        
+        if(!already_added) {
+            submenu_add_item(
+                app->manufacturer_list,
+                all_formats[i].manufacturer,
+                i,
+                manufacturer_selected_callback,
+                app);
+            added_manufacturers[added_count++] = all_formats[i].manufacturer;
+        }
+    }
 
-    app->format_name_item = variable_item_list_add(
-        app->variable_item_list_config, format_name_config_label, 0, NULL, NULL);
-    View* view_config_i = variable_item_list_get_view(app->variable_item_list_config);
-    variable_item_set_current_value_index(app->format_item, my_model->format_index);
-    variable_item_set_current_value_text(app->format_name_item, my_model->format.manufacturer);
-    key_copier_format_change(app->format_item);
-    view_set_previous_callback(view_config_i, key_copier_navigation_submenu_callback);
-    view_dispatcher_remove_view(
-        app->view_dispatcher, KeyCopierViewConfigure_i); // delete the last one
-    view_dispatcher_add_view(app->view_dispatcher, KeyCopierViewConfigure_i, view_config_i);
-    view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewConfigure_i); // recreate it
+    view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewManufacturerList);
 }
 
 static const char* key_name_entry_text = "Enter name";
@@ -664,6 +655,47 @@ static bool key_copier_view_measure_input_callback(InputEvent* event, void* cont
     return false;
 }
 
+static void manufacturer_selected_callback(void* context, uint32_t index) {
+    KeyCopierApp* app = context;
+    app->selected_manufacturer = all_formats[index].manufacturer;
+    
+    // Clear and populate format list for selected manufacturer
+    submenu_reset(app->format_list);
+    
+    // Add all formats for this manufacturer
+    for(size_t i = 0; i < COUNT_OF(all_formats); i++) {
+        if(strcmp(all_formats[i].manufacturer, app->selected_manufacturer) == 0) {
+            submenu_add_item(
+                app->format_list,
+                all_formats[i].format_name,
+                i,
+                format_selected_callback,
+                app);
+        }
+    }
+    
+    view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewFormatList);
+}
+
+static void format_selected_callback(void* context, uint32_t index) {
+    KeyCopierApp* app = context;
+    KeyCopierModel* model = view_get_model(app->view_measure);
+    
+    model->format_index = index;
+    model->format = all_formats[index];
+    if(model->depth != NULL) {
+        free(model->depth);
+    }
+    model->depth = malloc((model->format.pin_num + 1) * sizeof(uint8_t));
+    for(uint8_t i = 0; i <= model->format.pin_num; i++) {
+        model->depth[i] = model->format.min_depth_ind;
+    }
+    model->pin_slc = 1;
+    model->data_loaded = false;
+
+    view_dispatcher_switch_to_view(app->view_dispatcher, KeyCopierViewMeasure);
+}
+
 static KeyCopierApp* key_copier_app_alloc() {
     KeyCopierApp* app = (KeyCopierApp*)malloc(sizeof(KeyCopierApp));
 
@@ -678,7 +710,7 @@ static KeyCopierApp* key_copier_app_alloc() {
     submenu_set_header(app->submenu, "Key Copier v1.2");
     submenu_add_item(
         app->submenu,
-        "Select Template",
+        "Select Key Format",
         KeyCopierSubmenuIndexConfigure,
         key_copier_submenu_callback,
         app);
@@ -752,6 +784,24 @@ static KeyCopierApp* key_copier_app_alloc() {
     view_dispatcher_add_view(
         app->view_dispatcher, KeyCopierViewAbout, widget_get_view(app->widget_about));
 
+    app->manufacturer_list = submenu_alloc();
+    view_set_previous_callback(
+        submenu_get_view(app->manufacturer_list),
+        key_copier_navigation_submenu_callback);
+    view_dispatcher_add_view(
+        app->view_dispatcher,
+        KeyCopierViewManufacturerList,
+        submenu_get_view(app->manufacturer_list));
+
+    app->format_list = submenu_alloc();
+    view_set_previous_callback(
+        submenu_get_view(app->format_list),
+        key_copier_navigation_submenu_callback);
+    view_dispatcher_add_view(
+        app->view_dispatcher,
+        KeyCopierViewFormatList,
+        submenu_get_view(app->format_list));
+
     app->notifications = furi_record_open(RECORD_NOTIFICATION);
 
 #ifdef BACKLIGHT_ON
@@ -790,6 +840,10 @@ static void key_copier_app_free(KeyCopierApp* app) {
     variable_item_list_free(app->variable_item_list_config);
     view_dispatcher_remove_view(app->view_dispatcher, KeyCopierViewSubmenu);
     submenu_free(app->submenu);
+    view_dispatcher_remove_view(app->view_dispatcher, KeyCopierViewManufacturerList);
+    submenu_free(app->manufacturer_list);
+    view_dispatcher_remove_view(app->view_dispatcher, KeyCopierViewFormatList);
+    submenu_free(app->format_list);
     view_dispatcher_free(app->view_dispatcher);
     furi_record_close(RECORD_GUI);
 
