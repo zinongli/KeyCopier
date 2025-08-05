@@ -374,7 +374,7 @@ const KeyFormat all_formats[] = {
      .min_depth_ind = 1,
      .max_depth_ind = 4,
      .macs = 4,
-     .clearance = 4},
+     .clearance = 3},
 
     {.manufacturer = "Yamaha",
      .format_name = "YM63",
